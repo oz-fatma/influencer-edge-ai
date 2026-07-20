@@ -24,7 +24,7 @@ func NewScoreHandler(db *gorm.DB) *ScoreHandler {
 type createScoreRequest struct {
 	InfluencerName  string  `json:"influencer_name" binding:"required"`
 	Platform        string  `json:"platform" binding:"required"`
-	OverallScore    float64 `json:"overall_score" binding:"required"`
+	OverallScore    float64 `json:"overall_score"`
 	EngagementScore float64 `json:"engagement_score"`
 	AudienceScore   float64 `json:"audience_score"`
 	BrandFitScore   float64 `json:"brand_fit_score"`

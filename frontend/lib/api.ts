@@ -137,11 +137,26 @@ export type InfluencerAnalysis = {
   updated_at: string;
 };
 
+export type CreateScorePayload = {
+  influencer_name: string;
+  platform: string;
+  overall_score?: number;
+  engagement_score?: number;
+  audience_score?: number;
+  brand_fit_score?: number;
+  notes?: string;
+};
+
 export const scoresApi = {
   list: () =>
     apiFetch<{ scores: InfluencerScore[]; count: number }>("/api/scores"),
   getById: (id: number) =>
     apiFetch<{ score: InfluencerScore }>(`/api/scores/${id}`),
+  create: (payload: CreateScorePayload) =>
+    apiFetch<{ score: InfluencerScore }>("/api/scores", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
 
 export const analysesApi = {
