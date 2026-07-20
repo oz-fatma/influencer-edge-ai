@@ -13,50 +13,49 @@
 
 # InfluencerEdge AI
 
-AI destekli influencer-ajans eşleştirme platformu. Ajansların influencer adaylarını 
-filtreleyip kampanyaya uygunluklarını otomatik olarak puanlamasını sağlar.
+AI-powered influencer–agency matching platform. Helps agencies filter influencer candidates and automatically score their campaign fit.
 
-MasterFabric Academy Agentic AI Developer Training — Cohort 1, OOP fazı projesi.
+MasterFabric Academy Agentic AI Developer Training — Cohort 1, OOP phase project.
 
-## 🔗 Canlı Demo
+## 🔗 Live Demo
 
 - **Frontend:** https://influencer-edge-ai.vercel.app
 - **Backend API:** https://influencer-edge-ai.onrender.com
 
-## Özellikler
+## Features
 
-- **Auth** — JWT tabanlı kimlik doğrulama (access + refresh token rotation)
-- **Influencer Havuzu** — influencer ekleme, listeleme, skorlama
-- **Influencer Skorlama** — 0-100 arası, 4 alt kritere bölünmüş (genel, etkileşim, kitle, marka uyumu)
-- **AI Eşleştirme Paneli** — WebLLM (Gemma 2B) ile tarayıcıda çalışan influencer analizi
-- **LLM Monitoring** — çağrı latency'si, hata oranı, geçmiş çağrılar için canlı dashboard
+- **Auth** — JWT-based authentication (access + refresh token rotation)
+- **Influencer Pool** — add, list, and score influencers
+- **Influencer Scoring** — 0–100 scale split across 4 sub-criteria (overall, engagement, audience, brand fit)
+- **AI Matching Panel** — browser-based influencer analysis with WebLLM (Gemma 2B)
+- **LLM Monitoring** — live dashboard for call latency, error rate, and call history
 
-## Influencer Ekleme
+## Adding Influencers
 
-"+ Influencer Ekle" formuyla havuza yeni bir influencer eklenirken şu bilgiler girilir:
+When adding a new influencer to the pool via the **"+ Add Influencer"** form, the following fields are used:
 
-| Alan | Açıklama |
+| Field | Description |
 |---|---|
-| `influencer_name` | Influencer'ın adı (zorunlu) |
+| `influencer_name` | Influencer name (required) |
 | `platform` | instagram, tiktok, youtube, twitter, linkedin, other |
-| `notes` | Kısa açıklama/niş bilgisi (opsiyonel) |
-| `overall_score`, `engagement_score`, `audience_score`, `brand_fit_score` | 0-100 arası manuel skorlar (opsiyonel, boş bırakılırsa 0 kaydedilir) |
+| `notes` | Short description/niche info (optional) |
+| `overall_score`, `engagement_score`, `audience_score`, `brand_fit_score` | Manual scores from 0–100 (optional; defaults to 0 if left blank) |
 
-Skorlar manuel girilebilir veya Eşleştirme Paneli'nde WebLLM analiziyle otomatik üretilebilir.
+Scores can be entered manually or generated automatically via WebLLM analysis in the Matching Panel.
 
 ## Stack
 
-| Katman | Teknoloji |
+| Layer | Technology |
 |---|---|
 | Backend | Go, Gin, GORM |
-| Veritabanı | PostgreSQL, Redis |
+| Database | PostgreSQL, Redis |
 | Frontend | Next.js, TypeScript, Tailwind CSS |
-| AI | WebLLM (@mlc-ai/web-llm, Gemma 2B — tarayıcıda çalışır) |
+| AI | WebLLM (@mlc-ai/web-llm, Gemma 2B — runs in the browser) |
 | Deployment | Render (backend), Vercel (frontend) |
 
-## API Endpoint'leri (22)
+## API Endpoints (22)
 
-| Grup | Endpoint'ler |
+| Group | Endpoints |
 |---|---|
 | Common | `GET /health`, `GET /version` |
 | Config | `GET /config`, `GET /health-config` |
@@ -65,27 +64,27 @@ Skorlar manuel girilebilir veya Eşleştirme Paneli'nde WebLLM analiziyle otomat
 | Analyses | `POST/GET /api/analyses`, `GET /api/influencer-analysis/:id` |
 | Monitoring | `POST /api/llm-metrics`, `GET /api/monitoring/stats` |
 
-## Kurulum (Yerel Geliştirme)
+## Setup (Local Development)
 
 ### Backend
-\`\`\`bash
+```bash
 cd backend
 docker compose up -d   # Postgres + Redis
 go run main.go
-\`\`\`
+```
 
 ### Frontend
-\`\`\`bash
+```bash
 cd frontend
 npm install
 npm run dev
-\`\`\`
+```
 
-Frontend, backend'e `http://localhost:8080` üzerinden bağlanır (`NEXT_PUBLIC_API_URL` ile değiştirilebilir).
+The frontend connects to the backend at `http://localhost:8080` (configurable via `NEXT_PUBLIC_API_URL`).
 
-## Mimari Notlar
+## Architecture Notes
 
-- Şifreler **bcrypt** ile hash'lenir, JWT refresh token'lar rotation ile yenilenir
-- Her API isteğinde kullanıcı verisi izolasyonu sağlanır (IDOR koruması)
-- LLM analizi tamamen **tarayıcı tarafında** (client-side) çalışır — sunucuya influencer verisi dışında hassas veri gönderilmez
-- Monitoring verileri Redis sorted set üzerinde tutulur (zaman damgalı, hızlı erişim)
+- Passwords are hashed with **bcrypt**; JWT refresh tokens are rotated on renewal
+- User data isolation on every API request (IDOR protection)
+- LLM analysis runs entirely **client-side** — no sensitive data is sent to the server beyond influencer metadata
+- Monitoring data is stored in Redis sorted sets (timestamped, fast access)

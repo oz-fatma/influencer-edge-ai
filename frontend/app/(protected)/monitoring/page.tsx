@@ -29,7 +29,7 @@ export default function MonitoringPage() {
         return;
       }
       if (isInitial) {
-        setError("Monitoring verileri yüklenemedi.");
+        setError("Failed to load monitoring data.");
       }
     } finally {
       if (isInitial) {
@@ -47,7 +47,7 @@ export default function MonitoringPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-[var(--muted)]">
-        Yükleniyor...
+        Loading...
       </div>
     );
   }
@@ -55,7 +55,7 @@ export default function MonitoringPage() {
   if (error || !stats) {
     return (
       <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-6 py-8 text-center text-red-400">
-        {error ?? "Veri alınamadı"}
+        {error ?? "Failed to fetch data"}
       </div>
     );
   }
@@ -66,13 +66,13 @@ export default function MonitoringPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">LLM Monitoring</h1>
           <p className="mt-1 text-[var(--muted)]">
-            Web-LLM çağrı metrikleri ve performans özeti
+            Web-LLM call metrics and performance summary
           </p>
         </div>
         {lastUpdated && (
           <p className="text-xs text-[var(--muted)]">
-            Son güncelleme:{" "}
-            {lastUpdated.toLocaleTimeString("tr-TR", {
+            Last updated:{" "}
+            {lastUpdated.toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
               second: "2-digit",
@@ -87,15 +87,15 @@ export default function MonitoringPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
-          label="Toplam Çağrı"
+          label="Total Calls"
           value={String(stats.total_calls)}
         />
         <StatCard
-          label="Ortalama Yanıt Süresi"
+          label="Average Response Time"
           value={formatLatency(stats.avg_latency_ms)}
         />
         <StatCard
-          label="Hata Oranı"
+          label="Error Rate"
           value={`${stats.error_rate.toFixed(1)}%`}
           highlight={stats.error_rate > 0}
         />
@@ -103,15 +103,15 @@ export default function MonitoringPage() {
 
       <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
         <div className="border-b border-[var(--border)] px-5 py-4">
-          <h2 className="text-lg font-semibold">Son Çağrılar</h2>
+          <h2 className="text-lg font-semibold">Recent Calls</h2>
           <p className="text-sm text-[var(--muted)]">
-            En son {stats.recent_calls.length} LLM çağrısı
+            Latest {stats.recent_calls.length} LLM calls
           </p>
         </div>
 
         {stats.recent_calls.length === 0 ? (
           <div className="px-6 py-12 text-center text-[var(--muted)]">
-            Henüz LLM çağrısı kaydedilmedi
+            No LLM calls recorded yet
           </div>
         ) : (
           <>
@@ -121,9 +121,9 @@ export default function MonitoringPage() {
                   <tr className="border-b border-[var(--border)] text-[var(--muted)]">
                     <th className="px-5 py-3 font-medium">Influencer</th>
                     <th className="px-5 py-3 font-medium">Model</th>
-                    <th className="px-5 py-3 font-medium">Süre</th>
-                    <th className="px-5 py-3 font-medium">Durum</th>
-                    <th className="px-5 py-3 font-medium">Zaman</th>
+                    <th className="px-5 py-3 font-medium">Duration</th>
+                    <th className="px-5 py-3 font-medium">Status</th>
+                    <th className="px-5 py-3 font-medium">Time</th>
                   </tr>
                 </thead>
                 <tbody>

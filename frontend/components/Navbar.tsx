@@ -8,8 +8,8 @@ import { authApi } from "@/lib/api";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/influencers", label: "Influencer Havuzu" },
-  { href: "/matching", label: "Eşleştirme Paneli" },
+  { href: "/influencers", label: "Influencer Pool" },
+  { href: "/matching", label: "Matching Panel" },
   { href: "/monitoring", label: "Monitoring" },
 ];
 
@@ -26,7 +26,7 @@ export default function Navbar() {
         await authApi.logout(refreshToken);
       }
     } catch {
-      // Sunucu hatası olsa bile oturumu yerelde kapat
+      // Close session locally even if the server request fails
     } finally {
       clearAuth();
       router.push("/login");
@@ -71,7 +71,7 @@ export default function Navbar() {
           disabled={loggingOut}
           className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:border-[var(--accent)]/40 hover:text-[var(--foreground)] disabled:opacity-50"
         >
-          {loggingOut ? "Çıkış..." : "Çıkış Yap"}
+          {loggingOut ? "Logging out..." : "Logout"}
         </button>
       </div>
     </header>

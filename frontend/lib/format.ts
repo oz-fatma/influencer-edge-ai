@@ -6,7 +6,7 @@ export function formatLatency(ms: number): string {
 }
 
 export function formatTimestamp(ts: number): string {
-  return new Intl.DateTimeFormat("tr-TR", {
+  return new Intl.DateTimeFormat("en-US", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

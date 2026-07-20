@@ -6,7 +6,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="flex min-h-full items-center justify-center text-[var(--muted)]">
-          Yükleniyor...
+          Loading...
         </div>
       }
     >

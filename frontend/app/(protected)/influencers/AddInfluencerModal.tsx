@@ -13,7 +13,7 @@ const PLATFORMS = [
   { value: "youtube", label: "YouTube" },
   { value: "twitter", label: "Twitter" },
   { value: "linkedin", label: "LinkedIn" },
-  { value: "other", label: "Diğer" },
+  { value: "other", label: "Other" },
 ] as const;
 
 const inputClass =
@@ -69,16 +69,16 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
   }
 
   function validate(): string | null {
-    if (!influencerName.trim()) return "Influencer adı gerekli";
+    if (!influencerName.trim()) return "Influencer name is required";
     const scores = [
-      { label: "Genel skor", value: parseScore(overallScore) },
-      { label: "Etkileşim skoru", value: parseScore(engagementScore) },
-      { label: "Kitle skoru", value: parseScore(audienceScore) },
-      { label: "Marka uyumu skoru", value: parseScore(brandFitScore) },
+      { label: "Overall score", value: parseScore(overallScore) },
+      { label: "Engagement score", value: parseScore(engagementScore) },
+      { label: "Audience score", value: parseScore(audienceScore) },
+      { label: "Brand fit score", value: parseScore(brandFitScore) },
     ];
     for (const { label, value } of scores) {
-      if (Number.isNaN(value)) return `${label} geçerli bir sayı olmalı`;
-      if (value < 0 || value > 100) return `${label} 0–100 arasında olmalı`;
+      if (Number.isNaN(value)) return `${label} must be a valid number`;
+      if (value < 0 || value > 100) return `${label} must be between 0 and 100`;
     }
     return null;
   }
@@ -113,7 +113,7 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError("Influencer eklenemedi. Lütfen tekrar deneyin.");
+        setError("Failed to add influencer. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -133,17 +133,17 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
         type="button"
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}
-        aria-label="Kapat"
+        aria-label="Close"
       />
 
       <div className="relative z-10 w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl shadow-black/40">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h2 id="add-influencer-title" className="text-lg font-bold tracking-tight">
-              Yeni Influencer Ekle
+              Add New Influencer
             </h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              Havuza manuel olarak influencer kaydı ekleyin
+              Manually add an influencer record to the pool
             </p>
           </div>
           <button
@@ -151,7 +151,7 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
             onClick={handleClose}
             disabled={loading}
             className="rounded-lg p-1.5 text-[var(--muted)] transition-colors hover:bg-[var(--surface-elevated)] hover:text-[var(--foreground)] disabled:opacity-50"
-            aria-label="Kapat"
+            aria-label="Close"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6 6 18" />
@@ -163,7 +163,7 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="influencer_name" className="mb-1.5 block text-sm font-medium">
-              Influencer Adı <span className="text-[var(--accent)]">*</span>
+              Influencer Name <span className="text-[var(--accent)]">*</span>
             </label>
             <input
               id="influencer_name"
@@ -171,7 +171,7 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
               value={influencerName}
               onChange={(e) => setInfluencerName(e.target.value)}
               className={inputClass}
-              placeholder="örn. Ayşe Yılmaz"
+              placeholder="e.g. Jane Smith"
               autoFocus
             />
           </div>
@@ -196,7 +196,7 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
 
           <div>
             <label htmlFor="notes" className="mb-1.5 block text-sm font-medium">
-              Notlar
+              Notes
             </label>
             <textarea
               id="notes"
@@ -204,34 +204,34 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               className={`${inputClass} resize-none`}
-              placeholder="Güzellik ve lifestyle nişi"
+              placeholder="Beauty and lifestyle niche"
             />
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium">Skorlar (0–100, opsiyonel)</p>
+            <p className="mb-2 text-sm font-medium">Scores (0–100, optional)</p>
             <div className="grid grid-cols-2 gap-3">
               <ScoreField
                 id="overall_score"
-                label="Genel"
+                label="Overall"
                 value={overallScore}
                 onChange={setOverallScore}
               />
               <ScoreField
                 id="engagement_score"
-                label="Etkileşim"
+                label="Engagement"
                 value={engagementScore}
                 onChange={setEngagementScore}
               />
               <ScoreField
                 id="audience_score"
-                label="Kitle"
+                label="Audience"
                 value={audienceScore}
                 onChange={setAudienceScore}
               />
               <ScoreField
                 id="brand_fit_score"
-                label="Marka Uyumu"
+                label="Brand Fit"
                 value={brandFitScore}
                 onChange={setBrandFitScore}
               />
@@ -251,14 +251,14 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
               disabled={loading}
               className="flex-1 rounded-lg border border-[var(--border)] py-2.5 text-sm font-medium text-[var(--muted)] transition-colors hover:border-[var(--accent)]/40 hover:text-[var(--foreground)] disabled:opacity-50"
             >
-              İptal
+              Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? "Kaydediliyor..." : "Ekle"}
+              {loading ? "Saving..." : "Add"}
             </button>
           </div>
         </form>

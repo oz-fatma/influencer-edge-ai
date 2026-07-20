@@ -20,10 +20,10 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
 
   function validate(): string | null {
-    if (!email.trim()) return "E-posta gerekli";
-    if (!password) return "Şifre gerekli";
-    if (mode === "register" && !name.trim()) return "Ad soyad gerekli";
-    if (password.length < 8) return "Şifre en az 8 karakter olmalı";
+    if (!email.trim()) return "Email is required";
+    if (!password) return "Password is required";
+    if (mode === "register" && !name.trim()) return "Full name is required";
+    if (password.length < 8) return "Password must be at least 8 characters";
     return null;
   }
 
@@ -62,7 +62,7 @@ export default function LoginForm() {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError("Bağlantı hatası — backend çalışıyor mu?");
+        setError("Connection error — is the backend running?");
       }
     } finally {
       setLoading(false);
@@ -78,7 +78,7 @@ export default function LoginForm() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight">InfluencerEdge AI</h1>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Influencer-ajans eşleştirme platformuna giriş yapın
+            Sign in to the influencer–agency matching platform
           </p>
         </div>
 
@@ -98,7 +98,7 @@ export default function LoginForm() {
                     : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
-                {m === "login" ? "Giriş Yap" : "Kayıt Ol"}
+                {m === "login" ? "Sign In" : "Register"}
               </button>
             ))}
           </div>
@@ -107,7 +107,7 @@ export default function LoginForm() {
             {mode === "register" && (
               <div>
                 <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
-                  Ad Soyad
+                  Full Name
                 </label>
                 <input
                   id="name"
@@ -115,14 +115,14 @@ export default function LoginForm() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30"
-                  placeholder="Adınız Soyadınız"
+                  placeholder="Your full name"
                 />
               </div>
             )}
 
             <div>
               <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
-                E-posta
+                Email
               </label>
               <input
                 id="email"
@@ -130,14 +130,14 @@ export default function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30"
-                placeholder="ornek@ajans.com"
+                placeholder="you@agency.com"
                 autoComplete="email"
               />
             </div>
 
             <div>
               <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
-                Şifre
+                Password
               </label>
               <input
                 id="password"
@@ -162,10 +162,10 @@ export default function LoginForm() {
               className="w-full rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {loading
-                ? "İşleniyor..."
+                ? "Processing..."
                 : mode === "login"
-                  ? "Giriş Yap"
-                  : "Hesap Oluştur"}
+                  ? "Sign In"
+                  : "Create Account"}
             </button>
           </form>
         </div>

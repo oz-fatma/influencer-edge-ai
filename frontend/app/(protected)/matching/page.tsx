@@ -67,7 +67,7 @@ export default function MatchingPage() {
           handleUnauthorizedRedirect("/matching");
           return;
         }
-        setError("Veriler yüklenemedi. Lütfen tekrar deneyin.");
+        setError("Failed to load data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -98,7 +98,7 @@ export default function MatchingPage() {
         model: WEBLLM_MODEL_ID,
       });
     } catch {
-      // Metrik kaydı başarısız olsa bile analiz akışını kesme
+      // Do not interrupt the analysis flow if metric recording fails
     }
   }
 
@@ -109,7 +109,7 @@ export default function MatchingPage() {
     setAnalysisError(null);
     setLiveResult(null);
     setModelProgress(0);
-    setModelProgressText("Model hazırlanıyor...");
+    setModelProgressText("Preparing model...");
 
     const startTime = performance.now();
 
@@ -184,7 +184,7 @@ export default function MatchingPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-[var(--muted)]">
-        Yükleniyor...
+        Loading...
       </div>
     );
   }
@@ -200,24 +200,24 @@ export default function MatchingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">AI Eşleştirme Paneli</h1>
+        <h1 className="text-2xl font-bold tracking-tight">AI Matching Panel</h1>
         <p className="mt-1 text-[var(--muted)]">
-          WebLLM ile tarayıcıda influencer analizi ({WEBLLM_MODEL_ID})
+          Browser-based influencer analysis with WebLLM ({WEBLLM_MODEL_ID})
         </p>
       </div>
 
       {scores.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-16 text-center">
-          <p className="text-lg font-medium">Henüz skor eklenmedi</p>
+          <p className="text-lg font-medium">No scores added yet</p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Eşleştirme yapabilmek için önce influencer skorları eklenmeli.
+            Add influencer scores first before running matching analysis.
           </p>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
           <aside className="space-y-2 lg:col-span-1">
             <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-              Influencer Seç
+              Select Influencer
             </p>
             {scores.map((s) => (
               <button
@@ -256,14 +256,14 @@ export default function MatchingPage() {
                     disabled={analyzing}
                     className="rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    {analyzing ? "Analiz ediliyor..." : "Analiz Et"}
+                    {analyzing ? "Analyzing..." : "Analyze"}
                   </button>
                 </div>
 
                 {modelProgress !== null && (
                   <div className="mt-5">
                     <div className="mb-1.5 flex items-center justify-between text-xs text-[var(--muted)]">
-                      <span>{modelProgressText || "Model yükleniyor..."}</span>
+                      <span>{modelProgressText || "Loading model..."}</span>
                       <span>{modelProgress}%</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-elevated)]">
@@ -277,13 +277,13 @@ export default function MatchingPage() {
 
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <ScorePill
-                    label={liveResult ? "Genel (AI)" : "Genel"}
+                    label={liveResult ? "Overall (AI)" : "Overall"}
                     value={displayScores.overall}
                     highlight
                   />
-                  <ScorePill label="Etkileşim" value={displayScores.engagement} />
-                  <ScorePill label="Kitle" value={displayScores.audience} />
-                  <ScorePill label="Marka Uyumu" value={displayScores.brandFit} />
+                  <ScorePill label="Engagement" value={displayScores.engagement} />
+                  <ScorePill label="Audience" value={displayScores.audience} />
+                  <ScorePill label="Brand Fit" value={displayScores.brandFit} />
                 </div>
               </div>
 
@@ -297,9 +297,9 @@ export default function MatchingPage() {
                 <>
                   <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
                     <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-                      AI Özet
+                      AI Summary
                       {liveResult && (
-                        <span className="ml-2 normal-case text-[var(--accent)]">· yeni</span>
+                        <span className="ml-2 normal-case text-[var(--accent)]">· new</span>
                       )}
                     </h3>
                     <p className="leading-relaxed">{displaySummary}</p>
@@ -308,7 +308,7 @@ export default function MatchingPage() {
                   {displayInsights.length > 0 && (
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
                       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-                        İçgörüler
+                        Insights
                       </h3>
                       <ul className="space-y-2">
                         {displayInsights.map((insight, i) => (
@@ -326,10 +326,10 @@ export default function MatchingPage() {
                 !analyzing && (
                   <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-8 text-center">
                     <p className="font-medium text-[var(--muted)]">
-                      Henüz analiz yapılmadı
+                      No analysis yet
                     </p>
                     <p className="mt-2 text-sm text-[var(--muted)]">
-                      Seçili influencer için &quot;Analiz Et&quot; butonuna basın.
+                      Click &quot;Analyze&quot; for the selected influencer.
                     </p>
                   </div>
                 )

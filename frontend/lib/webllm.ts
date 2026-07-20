@@ -17,7 +17,7 @@ const ANALYSIS_JSON_SCHEMA = JSON.stringify({
         "Plain text insight sentences only. Each item MUST be a string, NOT an object.",
       items: {
         type: "string",
-        description: "One insight sentence in plain text, e.g. 'Son 30 günde ortalama %4.1 engagement'",
+        description: "One insight sentence in plain text, e.g. 'Average 4.1% engagement over the last 30 days'",
       },
       minItems: 1,
     },
@@ -40,11 +40,11 @@ const FEW_SHOT_EXAMPLE = JSON.stringify(
     audience_score: 79,
     brand_fit_score: 80,
     summary:
-      "Güçlü etkileşim oranı ve hedef kitle uyumu. Kozmetik kampanyaları için uygun profil.",
+      "Strong engagement rate and audience alignment. Suitable profile for cosmetics campaigns.",
     insights: [
-      "Son 30 günde ortalama %4.1 engagement",
-      "Takipçi kitlesinin %65'i hedef demografiye uyuyor",
-      "Sponsorlu içerikler organik performansın %90'ına ulaşıyor",
+      "Average 4.1% engagement over the last 30 days",
+      "65% of followers match the target demographic",
+      "Sponsored content reaches 90% of organic performance",
     ],
   },
   null,
@@ -96,13 +96,13 @@ export async function initWebLLMEngine(
   onProgress?: InitProgressCallback,
 ): Promise<MLCEngine> {
   if (typeof window === "undefined") {
-    throw new Error("WebLLM yalnızca tarayıcıda çalışır.");
+    throw new Error("WebLLM only runs in the browser.");
   }
 
   const webgpuOk = await isWebGPUAvailable();
   if (!webgpuOk) {
     throw new Error(
-      "WebGPU desteklenmiyor. Chrome veya Edge'in güncel sürümünü kullanın ve donanım hızlandırmanın açık olduğundan emin olun.",
+      "WebGPU is not supported. Use a recent version of Chrome or Edge and ensure hardware acceleration is enabled.",
     );
   }
 
@@ -127,7 +127,7 @@ export async function initWebLLMEngine(
 }
 
 function buildPrompt(input: InfluencerInput): string {
-  const notes = input.notes?.trim() || "Not belirtilmedi";
+  const notes = input.notes?.trim() || "No notes provided";
   return `You are an influencer marketing analyst.
 
 CRITICAL OUTPUT RULES:
@@ -138,12 +138,12 @@ CRITICAL OUTPUT RULES:
 - NO text before or after the JSON object
 - "insights" MUST be a string[] (plain text array), NOT an array of objects
   WRONG: [{"insights": "text"}] or [{"text": "..."}]
-  CORRECT: ["Son 30 günde ortalama %4.1 engagement", "Takipçi kitlesi hedef demografiye uyuyor"]
+  CORRECT: ["Average 4.1% engagement over the last 30 days", "Audience matches the target demographic"]
 
 Example input:
-Influencer: Ayşe Kaya
+Influencer: Jane Smith
 Platform: instagram
-Notes: Güzellik & lifestyle nişi
+Notes: Beauty & lifestyle niche
 
 Example output:
 ${FEW_SHOT_EXAMPLE}
@@ -285,7 +285,7 @@ function normalizeParsed(parsed: Record<string, unknown>): InfluencerAnalysisRes
 
   const summary = String(parsed.summary ?? "").trim();
   if (!summary) {
-    throw new Error("Model özeti boş döndü.");
+    throw new Error("Model returned an empty summary.");
   }
 
   return {
@@ -313,7 +313,7 @@ function parseAnalysisJson(raw: string): InfluencerAnalysisResult {
 
   console.log("[webllm] Raw model output (JSON parse failed):", raw);
   console.log("[webllm] Parse attempts:", errors);
-  throw new Error("Model geçerli JSON döndürmedi. Tekrar deneyin.");
+  throw new Error("Model did not return valid JSON. Please try again.");
 }
 
 export async function analyzeInfluencer(
@@ -341,7 +341,7 @@ export async function analyzeInfluencer(
 
   const rawOutput = response.choices[0]?.message?.content ?? "";
   if (!rawOutput.trim()) {
-    throw new Error("Model boş yanıt döndü.");
+    throw new Error("Model returned an empty response.");
   }
 
   const result = parseAnalysisJson(rawOutput);
@@ -352,5 +352,5 @@ export function getWebLLMErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
-  return "Bilinmeyen bir hata oluştu.";
+  return "An unknown error occurred.";
 }

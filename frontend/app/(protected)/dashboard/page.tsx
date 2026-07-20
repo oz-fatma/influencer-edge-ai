@@ -44,53 +44,53 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          Hoş geldin{user?.name ? `, ${user.name}` : ""} 👋
+          Welcome{user?.name ? `, ${user.name}` : ""} 👋
         </h1>
         <p className="mt-1 text-[var(--muted)]">
-          InfluencerEdge AI panelinize genel bakış
+          Overview of your InfluencerEdge AI dashboard
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
-          label="Havuzdaki Influencer"
+          label="Influencers in Pool"
           value={loading ? "—" : String(scores.length)}
         />
         <StatCard
-          label="Ortalama Skor"
+          label="Average Score"
           value={loading ? "—" : avgScore.toFixed(1)}
           suffix={loading ? undefined : "/100"}
         />
         <StatCard
-          label="Yüksek Uyum"
+          label="High Fit"
           value={loading ? "—" : String(highFit)}
-          suffix={loading ? undefined : " aday"}
+          suffix={loading ? undefined : " candidates"}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-          <h2 className="mb-4 text-lg font-semibold">Hızlı Erişim</h2>
+          <h2 className="mb-4 text-lg font-semibold">Quick Access</h2>
           <div className="space-y-3">
             <QuickLink
               href="/influencers"
-              title="Influencer Havuzu"
-              desc="Skorlanmış influencer listesini incele"
+              title="Influencer Pool"
+              desc="Browse the scored influencer list"
             />
             <QuickLink
               href="/matching"
-              title="AI Eşleştirme"
-              desc="Web-LLM analiz sonuçlarını görüntüle"
+              title="AI Matching"
+              desc="View Web-LLM analysis results"
             />
           </div>
         </section>
 
         <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-          <h2 className="mb-4 text-lg font-semibold">Son Skorlar</h2>
+          <h2 className="mb-4 text-lg font-semibold">Recent Scores</h2>
           {loading ? (
-            <p className="text-sm text-[var(--muted)]">Yükleniyor...</p>
+            <p className="text-sm text-[var(--muted)]">Loading...</p>
           ) : scores.length === 0 ? (
-            <p className="text-sm text-[var(--muted)]">Henüz skor eklenmedi</p>
+            <p className="text-sm text-[var(--muted)]">No scores added yet</p>
           ) : (
             <ul className="space-y-3">
               {scores.slice(0, 3).map((s) => (
