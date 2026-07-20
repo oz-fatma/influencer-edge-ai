@@ -1,0 +1,18 @@
+# Python
+llm-service/venv/
+llm-service/__pycache__/
+*.pyc
+
+# Node
+frontend/node_modules/
+frontend/.next/
+
+# Go
+backend/tmp/
+
+# Env dosyaları (hassas bilgi içerir, asla commit etme)
+.env
+*/.env
+
+# OS
+.DS_Store

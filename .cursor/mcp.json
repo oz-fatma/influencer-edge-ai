@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "masterfabric-academy": {
+      "command": "/Users/fatmaoz/.nvm/versions/node/v22.23.1/bin/npx",
+      "args": ["tsx", "/Users/fatmaoz/developer/one-hundered-days/mcp/mcp.ts"],
+      "cwd": "/Users/fatmaoz/developer/one-hundered-days/mcp",
+      "env": {
+        "PATH": "/Users/fatmaoz/.nvm/versions/node/v22.23.1/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  }
+}

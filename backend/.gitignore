@@ -1,0 +1,7 @@
+# Local env — copy from .env.example and customize
+.env
+data/
+*.db
+
+# Go
+/vendor/
