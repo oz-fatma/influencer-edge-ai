@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strings"
@@ -82,7 +83,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Name:         req.Name,
 	}
 
-	if err := h.db.Create(&user).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
 			c.JSON(http.StatusConflict, gin.H{"error": "email already registered"})
 			return
@@ -91,7 +92,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	tokens, err := h.issueTokenPair(user)
+	tokens, err := h.issueTokenPair(c.Request.Context(), user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
 		return
@@ -112,7 +113,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	email := strings.TrimSpace(strings.ToLower(req.Email))
 	var user models.User
-	if err := h.db.Where("email = ?", email).First(&user).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Where("email = ?", email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 			return
@@ -126,7 +127,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	tokens, err := h.issueTokenPair(user)
+	tokens, err := h.issueTokenPair(c.Request.Context(), user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
 		return
@@ -146,7 +147,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	tokenHash := utils.HashToken(req.RefreshToken)
-	result := h.db.Model(&models.RefreshToken{}).
+	result := h.db.WithContext(c.Request.Context()).Model(&models.RefreshToken{}).
 		Where("token_hash = ? AND revoked = ?", tokenHash, false).
 		Update("revoked", true)
 
@@ -173,7 +174,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	tokenHash := utils.HashToken(req.RefreshToken)
 	var stored models.RefreshToken
-	if err := h.db.Where("token_hash = ? AND revoked = ?", tokenHash, false).First(&stored).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Where("token_hash = ? AND revoked = ?", tokenHash, false).First(&stored).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token revoked or not found"})
 		return
 	}
@@ -183,15 +184,15 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := h.db.First(&user, claims.UserID).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).First(&user, claims.UserID).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
 		return
 	}
 
 	// Rotate: revoke old refresh token
-	h.db.Model(&stored).Update("revoked", true)
+	h.db.WithContext(c.Request.Context()).Model(&stored).Update("revoked", true)
 
-	tokens, err := h.issueTokenPair(user)
+	tokens, err := h.issueTokenPair(c.Request.Context(), user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "token generation failed"})
 		return
@@ -208,7 +209,7 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := h.db.First(&user, userID).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
@@ -236,13 +237,13 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := h.db.First(&user, userID).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
 
 	user.Name = req.Name
-	if err := h.db.Save(&user).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "update failed"})
 		return
 	}
@@ -269,7 +270,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := h.db.First(&user, userID).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
@@ -286,13 +287,13 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	}
 
 	user.PasswordHash = hash
-	if err := h.db.Save(&user).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "password update failed"})
 		return
 	}
 
 	// Invalidate all refresh tokens on password change
-	h.db.Model(&models.RefreshToken{}).Where("user_id = ?", userID).Update("revoked", true)
+	h.db.WithContext(c.Request.Context()).Model(&models.RefreshToken{}).Where("user_id = ?", userID).Update("revoked", true)
 
 	c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
 }
@@ -304,7 +305,7 @@ func (h *AuthHandler) DeleteAccount(c *gin.Context) {
 		return
 	}
 
-	tx := h.db.Begin()
+	tx := h.db.WithContext(c.Request.Context()).Begin()
 	if err := tx.Where("user_id = ?", userID).Delete(&models.RefreshToken{}).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "account deletion failed"})
@@ -330,7 +331,7 @@ func (h *AuthHandler) DeleteAccount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "account deleted successfully"})
 }
 
-func (h *AuthHandler) issueTokenPair(user models.User) (*utils.TokenPair, error) {
+func (h *AuthHandler) issueTokenPair(ctx context.Context, user models.User) (*utils.TokenPair, error) {
 	tokens, err := utils.GenerateTokenPair(
 		user.ID, user.Email, h.cfg.JWTSecret,
 		h.cfg.JWTAccessTTL, h.cfg.JWTRefreshTTL,
@@ -344,7 +345,7 @@ func (h *AuthHandler) issueTokenPair(user models.User) (*utils.TokenPair, error)
 		TokenHash: utils.HashToken(tokens.RefreshToken),
 		ExpiresAt: time.Now().Add(h.cfg.JWTRefreshTTL),
 	}
-	if err := h.db.Create(&refreshToken).Error; err != nil {
+	if err := h.db.WithContext(ctx).Create(&refreshToken).Error; err != nil {
 		return nil, err
 	}
 

@@ -17,6 +17,36 @@ type ScoreHandler struct {
 	db *gorm.DB
 }
 
+const (
+	defaultListLimit = 50
+	maxListLimit     = 200
+)
+
+func parseListLimit(raw string) int {
+	if raw == "" {
+		return defaultListLimit
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n <= 0 {
+		return defaultListLimit
+	}
+	if n > maxListLimit {
+		return maxListLimit
+	}
+	return n
+}
+
+func parseListOffset(raw string) int {
+	if raw == "" {
+		return 0
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 0 {
+		return 0
+	}
+	return n
+}
+
 func NewScoreHandler(db *gorm.DB) *ScoreHandler {
 	return &ScoreHandler{db: db}
 }
@@ -84,7 +114,7 @@ func (h *ScoreHandler) CreateScore(c *gin.Context) {
 		Notes:           req.Notes,
 	}
 
-	if err := h.db.Create(&score).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Create(&score).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create score"})
 		return
 	}
@@ -100,13 +130,15 @@ func (h *ScoreHandler) GetScores(c *gin.Context) {
 	}
 
 	platform := strings.TrimSpace(c.Query("platform"))
-	query := h.db.Where("user_id = ?", userID)
+	limit := parseListLimit(c.Query("limit"))
+	offset := parseListOffset(c.Query("offset"))
+	query := h.db.WithContext(c.Request.Context()).Where("user_id = ?", userID)
 	if platform != "" {
 		query = query.Where("platform = ?", strings.ToLower(platform))
 	}
 
 	var scores []models.InfluencerScore
-	if err := query.Order("created_at DESC").Find(&scores).Error; err != nil {
+	if err := query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&scores).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch scores"})
 		return
 	}
@@ -128,7 +160,7 @@ func (h *ScoreHandler) GetScoreByID(c *gin.Context) {
 	}
 
 	var score models.InfluencerScore
-	if err := h.db.Where("id = ? AND user_id = ?", id, userID).First(&score).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Where("id = ? AND user_id = ?", id, userID).First(&score).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "score not found"})
 			return
@@ -160,7 +192,7 @@ func (h *ScoreHandler) UpdateScore(c *gin.Context) {
 	}
 
 	var score models.InfluencerScore
-	if err := h.db.Where("id = ? AND user_id = ?", id, userID).First(&score).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Where("id = ? AND user_id = ?", id, userID).First(&score).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "score not found"})
 			return
@@ -218,7 +250,7 @@ func (h *ScoreHandler) UpdateScore(c *gin.Context) {
 		score.Notes = *req.Notes
 	}
 
-	if err := h.db.Save(&score).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Save(&score).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update score"})
 		return
 	}
@@ -239,7 +271,7 @@ func (h *ScoreHandler) DeleteScore(c *gin.Context) {
 		return
 	}
 
-	result := h.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.InfluencerScore{})
+	result := h.db.WithContext(c.Request.Context()).Where("id = ? AND user_id = ?", id, userID).Delete(&models.InfluencerScore{})
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete score"})
 		return
@@ -266,7 +298,7 @@ func (h *ScoreHandler) GetInfluencerAnalysis(c *gin.Context) {
 	}
 
 	var analysis models.InfluencerAnalysis
-	if err := h.db.Where("id = ? AND user_id = ?", id, userID).First(&analysis).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Where("id = ? AND user_id = ?", id, userID).First(&analysis).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "analysis not found"})
 			return
@@ -286,13 +318,15 @@ func (h *ScoreHandler) ListAnalyses(c *gin.Context) {
 	}
 
 	platform := strings.TrimSpace(c.Query("platform"))
-	query := h.db.Where("user_id = ?", userID)
+	limit := parseListLimit(c.Query("limit"))
+	offset := parseListOffset(c.Query("offset"))
+	query := h.db.WithContext(c.Request.Context()).Where("user_id = ?", userID)
 	if platform != "" {
 		query = query.Where("platform = ?", strings.ToLower(platform))
 	}
 
 	var analyses []models.InfluencerAnalysis
-	if err := query.Order("created_at DESC").Find(&analyses).Error; err != nil {
+	if err := query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&analyses).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch analyses"})
 		return
 	}
@@ -332,7 +366,7 @@ func (h *ScoreHandler) CreateAnalysis(c *gin.Context) {
 
 	if req.ScoreID != nil {
 		var score models.InfluencerScore
-		if err := h.db.Where("id = ? AND user_id = ?", *req.ScoreID, userID).First(&score).Error; err != nil {
+		if err := h.db.WithContext(c.Request.Context()).Where("id = ? AND user_id = ?", *req.ScoreID, userID).First(&score).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "linked score_id not found"})
 				return
@@ -353,7 +387,7 @@ func (h *ScoreHandler) CreateAnalysis(c *gin.Context) {
 		ScoreID:        req.ScoreID,
 	}
 
-	if err := h.db.Create(&analysis).Error; err != nil {
+	if err := h.db.WithContext(c.Request.Context()).Create(&analysis).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create analysis"})
 		return
 	}
