@@ -35,8 +35,6 @@ func (h *ConfigHandler) GetHealthConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":           "ok",
 		"database":         "postgres",
-		"jwt_access_ttl":   h.cfg.JWTAccessTTL.String(),
-		"jwt_refresh_ttl":  h.cfg.JWTRefreshTTL.String(),
 		"cors_origins_set": len(h.cfg.CORSAllowedOrigins) > 0,
 	})
 }

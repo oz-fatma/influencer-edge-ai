@@ -48,6 +48,10 @@ type changePasswordRequest struct {
 	NewPassword     string `json:"new_password" binding:"required"`
 }
 
+type deleteAccountRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+}
+
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -85,7 +89,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	if err := h.db.WithContext(c.Request.Context()).Create(&user).Error; err != nil {
 		if strings.Contains(err.Error(), "UNIQUE") {
-			c.JSON(http.StatusConflict, gin.H{"error": "email already registered"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "registration failed"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "registration failed"})
@@ -302,6 +306,23 @@ func (h *AuthHandler) DeleteAccount(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var req deleteAccountRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	var user models.User
+	if err := h.db.WithContext(c.Request.Context()).First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	if !utils.CheckPassword(req.CurrentPassword, user.PasswordHash) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "current password is incorrect"})
 		return
 	}
 

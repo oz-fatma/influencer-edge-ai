@@ -10,7 +10,11 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const llmCallsKey = "llm_calls"
+const llmCallsKeyPrefix = "llm_calls:"
+
+func userLLMCallsKey(userID uint) string {
+	return fmt.Sprintf("%s%d", llmCallsKeyPrefix, userID)
+}
 
 type LLMCallMetric struct {
 	ID             string `json:"id"`
@@ -36,7 +40,7 @@ func NewLLMMetricsStore(rdb *redis.Client) *LLMMetricsStore {
 	return &LLMMetricsStore{redis: rdb}
 }
 
-func (s *LLMMetricsStore) Record(ctx context.Context, metric *LLMCallMetric) error {
+func (s *LLMMetricsStore) Record(ctx context.Context, userID uint, metric *LLMCallMetric) error {
 	if metric.Timestamp == 0 {
 		metric.Timestamp = time.Now().UnixMilli()
 	}
@@ -47,16 +51,19 @@ func (s *LLMMetricsStore) Record(ctx context.Context, metric *LLMCallMetric) err
 		return fmt.Errorf("marshal metric: %w", err)
 	}
 
-	return s.redis.ZAdd(ctx, llmCallsKey, redis.Z{
+	key := userLLMCallsKey(userID)
+	return s.redis.ZAdd(ctx, key, redis.Z{
 		Score:  float64(metric.Timestamp),
 		Member: string(payload),
 	}).Err()
 }
 
-func (s *LLMMetricsStore) GetStats(ctx context.Context) (*LLMMonitoringStats, error) {
+func (s *LLMMetricsStore) GetStats(ctx context.Context, userID uint) (*LLMMonitoringStats, error) {
+	key := userLLMCallsKey(userID)
+
 	pipe := s.redis.Pipeline()
-	cardCmd := pipe.ZCard(ctx, llmCallsKey)
-	recentCmd := pipe.ZRevRange(ctx, llmCallsKey, 0, 19)
+	cardCmd := pipe.ZCard(ctx, key)
+	recentCmd := pipe.ZRevRange(ctx, key, 0, 19)
 	if _, err := pipe.Exec(ctx); err != nil {
 		return nil, fmt.Errorf("pipeline exec: %w", err)
 	}

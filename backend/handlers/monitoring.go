@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/influencer-edge-ai/backend/middleware"
 	"github.com/influencer-edge-ai/backend/store"
 	"github.com/influencer-edge-ai/backend/utils"
 )
@@ -25,6 +26,12 @@ type recordLLMMetricRequest struct {
 }
 
 func (h *MonitoringHandler) RecordLLMMetric(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
 	var req recordLLMMetricRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
@@ -64,7 +71,7 @@ func (h *MonitoringHandler) RecordLLMMetric(c *gin.Context) {
 		Model:          model,
 	}
 
-	if err := h.metrics.Record(c.Request.Context(), &metric); err != nil {
+	if err := h.metrics.Record(c.Request.Context(), userID, &metric); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to record metric"})
 		return
 	}
@@ -76,7 +83,13 @@ func (h *MonitoringHandler) RecordLLMMetric(c *gin.Context) {
 }
 
 func (h *MonitoringHandler) GetMonitoringStats(c *gin.Context) {
-	stats, err := h.metrics.GetStats(c.Request.Context())
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	stats, err := h.metrics.GetStats(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch monitoring stats"})
 		return

@@ -7,10 +7,17 @@ import { ApiError, authApi } from "@/lib/api";
 
 type Mode = "login" | "register";
 
+function safeRedirect(path: string | null): string {
+  if (!path || !path.startsWith("/") || path.startsWith("//")) {
+    return "/dashboard";
+  }
+  return path;
+}
+
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") ?? "/dashboard";
+  const redirect = safeRedirect(searchParams.get("redirect"));
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");

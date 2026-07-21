@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/influencer-edge-ai/backend/config"
 	"github.com/influencer-edge-ai/backend/handlers"
@@ -28,12 +30,13 @@ func Setup(r *gin.Engine, db *gorm.DB, redis *redis.Client, cfg *config.Config) 
 	r.GET("/health-config", configH.GetHealthConfig)
 
 	// Auth [8] — public
+	authRateLimit := middleware.AuthRateLimit(redis, 5, time.Minute)
 	authGroup := r.Group("/auth")
 	{
-		authGroup.POST("/register", auth.Register)
-		authGroup.POST("/login", auth.Login)
+		authGroup.POST("/register", authRateLimit, auth.Register)
+		authGroup.POST("/login", authRateLimit, auth.Login)
 		authGroup.POST("/logout", auth.Logout)
-		authGroup.POST("/refresh-token", auth.RefreshToken)
+		authGroup.POST("/refresh-token", authRateLimit, auth.RefreshToken)
 	}
 
 	// Auth [8] — protected

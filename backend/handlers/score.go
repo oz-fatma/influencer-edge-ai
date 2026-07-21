@@ -20,6 +20,9 @@ type ScoreHandler struct {
 const (
 	defaultListLimit = 50
 	maxListLimit     = 200
+	maxNotesLen      = 4096
+	maxRawPayloadLen = 65536
+	maxRawLLMOutputLen = 65536
 )
 
 func parseListLimit(raw string) int {
@@ -99,6 +102,14 @@ func (h *ScoreHandler) CreateScore(c *gin.Context) {
 	if err := validateScoreInput(req.InfluencerName, req.Platform, req.OverallScore,
 		req.EngagementScore, req.AudienceScore, req.BrandFitScore); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if len(req.Notes) > maxNotesLen {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "notes must be at most 4096 characters"})
+		return
+	}
+	if len(req.RawPayload) > maxRawPayloadLen {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "raw_payload must be at most 65536 characters"})
 		return
 	}
 
@@ -361,6 +372,10 @@ func (h *ScoreHandler) CreateAnalysis(c *gin.Context) {
 	}
 	if strings.TrimSpace(req.Summary) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "summary is required"})
+		return
+	}
+	if len(req.RawLLMOutput) > maxRawLLMOutputLen {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "raw_llm_output must be at most 65536 characters"})
 		return
 	}
 

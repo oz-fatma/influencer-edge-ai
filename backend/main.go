@@ -39,6 +39,8 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
+	r.Use(middleware.SecurityHeaders())
+	r.Use(middleware.RequestSizeLimit(1 << 20))
 	r.Use(middleware.CORS(cfg))
 
 	routes.Setup(r, db, redisClient, cfg)
