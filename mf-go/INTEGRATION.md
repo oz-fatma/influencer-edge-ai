@@ -138,6 +138,34 @@ Then on **influencer-edge-mfgo** Render service → Environment:
 
 Save → **Manual Deploy**.
 
+#### Verify the deploy picked up the schema fix
+
+After deploy is **Live**, open **Logs** and confirm startup lines include:
+
+```
+"version":"0.0.2"
+"postgres qualified tables","users":"mf.users"
+"users table verified","table":"mf.users"
+```
+
+If register still returns 500, check the error line:
+
+| Log error | Meaning |
+|---|---|
+| `relation "users" does not exist` | **Old binary** still running — Render did not deploy commit `cc7b24a+` yet. Trigger **Manual Deploy** and confirm **Events** shows the latest commit. |
+| `relation "mf.users" does not exist` | Migrations missing — re-run `migrate_render_schema.sh`. |
+| `duplicate key value violates unique constraint` | Email already registered — use a new email or login instead. |
+
+Render **Root Directory** must be `mf-go`. Build/start typically:
+
+| Setting | Value |
+|---|---|
+| Root Directory | `mf-go` |
+| Build Command | `go build -o bin/server ./cmd/server` |
+| Start Command | `./bin/server` |
+
+If **Events** shows an older commit than `origin/main`, push again or use **Manual Deploy** → **Clear build cache & deploy**.
+
 Safe to run in `public` only (optional observability):
 
 ```bash

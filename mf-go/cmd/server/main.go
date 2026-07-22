@@ -71,6 +71,7 @@ func run() error {
 	log.Info("starting masterfabric-go",
 		"host", cfg.Server.Host,
 		"port", cfg.Server.Port,
+		"version", version.Version,
 	)
 
 	if cfg.JWT.Secret == "change-me-in-production" {
@@ -101,6 +102,15 @@ func run() error {
 			var searchPath string
 			if err := db.QueryRow(ctx, "SHOW search_path").Scan(&searchPath); err == nil {
 				log.Info("postgres search_path", "value", searchPath)
+			}
+			usersTable := database.QualifyTable(cfg.Database.Schema, "users")
+			requestLogsTable := database.QualifyTable(cfg.Database.Schema, "request_logs")
+			log.Info("postgres qualified tables", "users", usersTable, "request_logs", requestLogsTable)
+			var userCount int
+			if err := db.QueryRow(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", usersTable)).Scan(&userCount); err != nil {
+				log.Error("users table not accessible", "table", usersTable, "error", err)
+			} else {
+				log.Info("users table verified", "table", usersTable, "rows", userCount)
 			}
 		}
 	}

@@ -240,7 +240,7 @@ func loadDatabaseConfig() DatabaseConfig {
 		cfg.SSLMode = v
 	}
 	if v := os.Getenv("DB_SCHEMA"); v != "" {
-		cfg.Schema = v
+		cfg.Schema = normalizeDBSchema(v)
 	}
 	if v := os.Getenv("DB_MAX_CONNS"); v != "" {
 		if n, err := strconv.ParseInt(v, 10, 32); err == nil {
@@ -254,6 +254,13 @@ func loadDatabaseConfig() DatabaseConfig {
 	}
 
 	return cfg
+}
+
+// normalizeDBSchema trims whitespace and surrounding quotes from DB_SCHEMA env values.
+func normalizeDBSchema(raw string) string {
+	s := strings.TrimSpace(raw)
+	s = strings.Trim(s, `"'`)
+	return strings.TrimSpace(s)
 }
 
 func parseDatabaseURL(raw string) (DatabaseConfig, error) {
