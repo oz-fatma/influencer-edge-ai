@@ -9,6 +9,9 @@ frontend/.next/
 
 # Go
 backend/tmp/
+mf-go/tmp/
+mf-go/bin/
+mf-go/.env
 
 # Env dosyaları (hassas bilgi içerir, asla commit etme)
 .env
