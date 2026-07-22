@@ -1,0 +1,18 @@
+{
+  "name": "create-feature",
+  "displayName": "Create New Feature",
+  "description": "Scaffold a complete feature: domain model, repository interface, use case, DTO, handler, route, and migration",
+  "prompt": "Create a new feature called '{{featureName}}' for the '{{contextName}}' bounded context. Follow the masterfabric_go Clean Architecture conventions:\n\n1. Domain model in internal/domain/{{contextName}}/model/{{featureName}}.go\n2. Repository interface in internal/domain/{{contextName}}/repository/{{featureName}}_repository.go\n3. Domain event in internal/domain/{{contextName}}/event/events.go\n4. Use case in internal/application/{{contextName}}/usecase/create_{{featureName}}.go\n5. DTO in internal/application/{{contextName}}/dto/{{featureName}}_dto.go\n6. PostgreSQL repository in internal/infrastructure/postgres/{{contextName}}/{{featureName}}_repository.go\n7. HTTP handler in internal/infrastructure/http/handler/{{contextName}}/handler.go\n8. Route in internal/infrastructure/http/router/router.go\n9. Migration in internal/infrastructure/postgres/migrations/\n10. Wire in cmd/server/main.go\n\nInclude organization_id and app_id for multi-tenant isolation.",
+  "variables": [
+    {
+      "name": "featureName",
+      "description": "Name of the feature (e.g., order, product, invoice)",
+      "required": true
+    },
+    {
+      "name": "contextName",
+      "description": "Bounded context (e.g., tenant, iam, apimanagement)",
+      "required": true
+    }
+  ]
+}

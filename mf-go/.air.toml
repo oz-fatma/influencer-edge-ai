@@ -1,0 +1,54 @@
+# .air.toml — Hot-reload configuration for masterfabric-go
+# Docs: https://github.com/air-verse/air
+
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # Pre-build: kill any lingering process on :8080 to avoid bind errors
+  pre_cmd = ["sh -c 'p=${SERVER_PORT:-8080}; lsof -ti:$p | xargs kill -9 2>/dev/null || true'"]
+  # Build command — CGO disabled, local GOTMPDIR + GOCACHE to avoid macOS sandbox issues
+  # GOCACHE must be absolute; we resolve it at build time via $PWD
+  cmd = "GOTMPDIR=$PWD/tmp GOCACHE=$PWD/tmp/go-cache CGO_ENABLED=0 go build -o ./tmp/server ./cmd/server"
+  # Entry point (binary to run)
+  entrypoint = ["./tmp/server"]
+  # Watch these file extensions
+  include_ext = ["go", "toml", "yaml", "yml", "sql", "env"]
+  # Directories to exclude from watching
+  exclude_dir = ["tmp", "bin", "vendor", "node_modules", ".git", "deployments", "postman", ".tmp", "scripts"]
+  # Files to exclude
+  exclude_file = []
+  # Regex to exclude
+  exclude_regex = ["_test\\.go$"]
+  # Exclude unchanged files
+  exclude_unchanged = true
+  # Follow symlinks
+  follow_symlink = false
+  # Delay after file change before rebuilding (ms)
+  delay = 500
+  # Stop running old binary on build error
+  stop_on_error = true
+  # Send interrupt signal before killing
+  send_interrupt = true
+  # Delay after interrupt signal before force kill (ms)
+  kill_delay = 2000
+  # Rerun binary if it exits on its own
+  rerun = false
+  # Rerun delay
+  rerun_delay = 500
+
+[log]
+  # Show timestamp in log
+  time = true
+  # Only show main log (not air's internal logs)
+  main_only = false
+
+[color]
+  main    = "cyan"
+  watcher = "magenta"
+  build   = "yellow"
+  runner  = "green"
+
+[misc]
+  # Clean tmp on exit
+  clean_on_exit = true

@@ -1,0 +1,83 @@
+---
+description: Guide to define dynamic endpoints via API - CRUD actions, table mapping, schema, policies
+alwaysApply: false
+globs: ["**/gateway/**/*.go", "**/apimanagement/**/*.go"]
+---
+
+# Create Endpoint Rule
+
+Use when defining or working with dynamic API endpoints in masterfabric_go.
+
+## Defining an Endpoint via API
+
+```
+POST /api/v1/organizations/{orgId}/apps/{appId}/endpoints
+```
+
+```json
+{
+    "method": "GET",
+    "path": "/products",
+    "version": "v1",
+    "backend_service": "product-service",
+    "backend_action": "list",
+    "audit_level": "basic",
+    "pii_masking": false
+}
+```
+
+## Available Actions
+
+| Action | HTTP Method | Description |
+|--------|-------------|-------------|
+| `list` | GET | Query with pagination (?offset=0&limit=20) |
+| `get` | GET | Get single record by ID from path |
+| `create` | POST | Insert new record from request body |
+| `update` | PUT | Full update of record by ID |
+| `patch` | PATCH | Partial update of record by ID |
+| `delete` | DELETE | Delete record by ID |
+
+## Table Name Resolution
+
+1. Check `schema.table_name` metadata first
+2. Derive from `backend_service`: strip `-service`/`-api`/`-handler`, pluralize
+   - `order-service` → `orders`
+   - `product-api` → `products`
+   - `user-handler` → `users`
+
+## Schema Validation Example
+
+```json
+{
+    "method": "POST",
+    "path": "/orders",
+    "backend_service": "order-service",
+    "backend_action": "create",
+    "schema": {
+        "type": "object",
+        "required": ["customer_id"],
+        "properties": {
+            "customer_id": { "type": "string" },
+            "items": { "type": "array" }
+        }
+    }
+}
+```
+
+## Three Handler Strategies (Priority Order)
+
+1. **Registered Handler**: Custom Go code registered for `backend_service`
+2. **HTTP Proxy**: If `backend_service` is a URL or has ServiceConfig
+3. **Generic Dynamic**: Automatic CRUD using PostgreSQL
+
+## Multi-Tenant Isolation
+
+All dynamic queries automatically include:
+- `WHERE organization_id = $1 AND app_id = $2`
+
+## Checklist
+
+- [ ] `backend_service` and `backend_action` are set
+- [ ] Schema defined for POST/PUT/PATCH endpoints
+- [ ] Target table exists with `organization_id` and `app_id` columns
+- [ ] Table has `created_at` column for ORDER BY

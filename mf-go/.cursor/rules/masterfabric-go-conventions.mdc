@@ -1,0 +1,104 @@
+---
+description: MasterFabric Go conventions - Clean Architecture, DDD, naming, multi-tenancy, dependency injection
+alwaysApply: true
+---
+
+# MasterFabric Go Conventions
+
+Follow these conventions when working with masterfabric_go.
+
+## Import Order
+
+1. Standard library (`context`, `fmt`, `net/http`, `time`)
+2. External packages (`github.com/go-chi/chi/v5`, `github.com/jackc/pgx/v5`)
+3. Internal packages (`github.com/masterfabric-go/masterfabric/internal/...`)
+
+## Naming
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Files | snake_case | `endpoint_repository.go`, `define_endpoint.go` |
+| Packages | lowercase | `usecase`, `model`, `handler` |
+| Structs | PascalCase | `EndpointRepo`, `DefineEndpointUseCase` |
+| Interfaces | PascalCase (descriptive) | `EndpointRepository`, `EventBus` |
+| Constructors | NewXxx | `NewEndpointRepo(db)`, `NewHandler(uc)` |
+| Methods | PascalCase (exported) | `Execute()`, `GetByID()` |
+| Variables | camelCase | `endpointRepo`, `eventBus` |
+| Errors | ErrXxx | `ErrNotFound`, `ErrBadRequest` |
+| Constants | PascalCase or ALL_CAPS | `EndpointStatusActive`, `TopicIAM` |
+
+## Layer Rules (Clean Architecture)
+
+```
+Domain → Application → Infrastructure
+  ↑ depends on nothing    ↑ depends on Domain+App
+```
+
+- **Domain**: Pure Go. No external imports. Models, interfaces, events.
+- **Application**: Use cases, DTOs. Imports domain only.
+- **Infrastructure**: Implements domain interfaces. HTTP, Postgres, Redis, Kafka.
+- **NEVER** import infrastructure from domain or application.
+
+## Constructor Pattern
+
+```go
+type MyUseCase struct {
+    repo   repository.MyRepository
+    events events.EventBus
+}
+
+func NewMyUseCase(repo repository.MyRepository, events events.EventBus) *MyUseCase {
+    return &MyUseCase{repo: repo, events: events}
+}
+
+func (uc *MyUseCase) Execute(ctx context.Context, input InputDTO) (*OutputDTO, error) {
+    // business logic
+}
+```
+
+## Error Handling
+
+```go
+// ❌ BAD
+result, _ := repo.GetByID(ctx, id)
+
+// ✅ GOOD
+result, err := repo.GetByID(ctx, id)
+if err != nil {
+    return nil, fmt.Errorf("failed to get entity: %w", err)
+}
+```
+
+## Multi-Tenancy
+
+- Every query includes `organization_id` and `app_id`
+- Extract from context: `middleware.OrgIDFromContext(ctx)`
+- Set via headers: `X-Organization-ID`, `X-App-ID`
+
+## HTTP Handlers
+
+```go
+func (h *Handler) GetEndpoint(w http.ResponseWriter, r *http.Request) {
+    id, err := uuid.Parse(chi.URLParam(r, "endpointId"))
+    if err != nil {
+        response.JSON(w, http.StatusBadRequest, map[string]string{"error": "invalid id"})
+        return
+    }
+    result, err := h.useCase.Execute(r.Context(), id)
+    if err != nil {
+        response.Error(w, err)
+        return
+    }
+    response.JSON(w, http.StatusOK, result)
+}
+```
+
+## Key Rules
+
+1. **Context first**: `ctx context.Context` is always the first parameter
+2. **Error last**: `error` is always the last return value
+3. **Wrap errors**: Use `fmt.Errorf("context: %w", err)` or `domainErr.New()`
+4. **No globals**: Use dependency injection via constructors
+5. **Interfaces in domain**: Define in domain, implement in infrastructure
+6. **UUID for IDs**: Use `github.com/google/uuid` for all entity IDs
+7. **Time in UTC**: Always `time.Now().UTC()`

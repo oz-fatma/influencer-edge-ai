@@ -1,0 +1,28 @@
+{
+  "name": "pre-commit",
+  "displayName": "Pre-Commit Check",
+  "description": "Run before committing: go vet, format check, build verification",
+  "trigger": "pre-commit",
+  "steps": [
+    {
+      "name": "vet",
+      "command": "go vet ./...",
+      "description": "Static analysis"
+    },
+    {
+      "name": "format",
+      "command": "gofmt -l .",
+      "description": "Check formatting (should return empty)"
+    },
+    {
+      "name": "build",
+      "command": "go build ./cmd/server",
+      "description": "Verify compilation"
+    },
+    {
+      "name": "tidy",
+      "command": "go mod tidy",
+      "description": "Clean module dependencies"
+    }
+  ]
+}

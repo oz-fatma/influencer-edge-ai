@@ -1,0 +1,23 @@
+{
+  "name": "create-endpoint",
+  "displayName": "Define Dynamic Endpoint",
+  "description": "Generate a dynamic CRUD endpoint definition with all 5 actions (list, get, create, update, delete)",
+  "prompt": "Define a complete set of dynamic CRUD endpoints for '{{serviceName}}' in the Postman collection and explain how to create them via the API.\n\nGenerate endpoint definitions for:\n1. GET /{{resourcePath}} (list with pagination)\n2. GET /{{resourcePath}}/{id} (get by ID)\n3. POST /{{resourcePath}} (create)\n4. PUT /{{resourcePath}}/{id} (update)\n5. DELETE /{{resourcePath}}/{id} (delete)\n\nUse backend_service: '{{serviceName}}-service' and appropriate backend_action values.\nInclude JSON schema for POST/PUT if needed.\nEnsure the target table '{{tableName}}' has organization_id and app_id columns.",
+  "variables": [
+    {
+      "name": "serviceName",
+      "description": "Service name (e.g., order, product, invoice)",
+      "required": true
+    },
+    {
+      "name": "resourcePath",
+      "description": "URL path for the resource (e.g., orders, products)",
+      "required": true
+    },
+    {
+      "name": "tableName",
+      "description": "Database table name (e.g., orders, products)",
+      "required": true
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+---
+description: Go documentation style - godoc conventions, package docs, struct/method comments
+alwaysApply: false
+globs: "**/*.go"
+---
+
+# Documentation Style Rule
+
+Use when documenting Go code in MasterFabric Go.
+
+## Package Documentation
+
+```go
+// Package usecase provides application-level business logic.
+// It orchestrates domain operations and publishes events.
+package usecase
+```
+
+## Struct Documentation
+
+```go
+// DynamicHandlerResolver resolves handlers dynamically based on endpoint configuration.
+// It supports multiple strategies:
+// 1. Registered handlers (if service is registered)
+// 2. HTTP proxy to external services (if backend_service is a URL)
+// 3. Generic dynamic database handler (automatically performs CRUD operations)
+type DynamicHandlerResolver struct {
+```
+
+## Method Documentation
+
+```go
+// Execute activates an endpoint by changing its status to active.
+// Returns an error if the endpoint is already active or not found.
+func (uc *ActivateEndpointUseCase) Execute(ctx context.Context, endpointID uuid.UUID) error {
+```
+
+## Interface Documentation
+
+```go
+// EndpointRepository defines the interface for endpoint persistence.
+// Implementations must enforce multi-tenant isolation.
+type EndpointRepository interface {
+    Create(ctx context.Context, endpoint *model.Endpoint) error
+    GetByID(ctx context.Context, id uuid.UUID) (*model.Endpoint, error)
+}
+```
+
+## Comment Style
+
+```go
+// ❌ BAD - narrates what code does
+// Increment counter
+counter++
+
+// ❌ BAD - restates the obvious
+// GetByID gets by ID
+func (r *Repo) GetByID(...)
+
+// ✅ GOOD - explains non-obvious intent
+// GetByID retrieves an endpoint, returning ErrNotFound if it doesn't exist.
+func (r *Repo) GetByID(...)
+
+// ✅ GOOD - explains trade-offs
+// We use row_to_json() instead of manual scanning to handle
+// tables with unknown column schemas dynamically.
+```
+
+## Godoc Conventions
+
+- First sentence is the summary (shown in package index)
+- Start with the entity name: `// Handler provides API Management HTTP handlers.`
+- Use present tense: "creates", "returns", "checks" (not "will create")
+- Reference other symbols with brackets: `[EndpointRepository]`
+
+## Checklist
+
+- [ ] Every exported type has a doc comment
+- [ ] Every exported function has a doc comment
+- [ ] Package has a doc comment (`// Package xxx ...`)
+- [ ] Comments explain WHY, not WHAT
+- [ ] First sentence starts with the type/function name

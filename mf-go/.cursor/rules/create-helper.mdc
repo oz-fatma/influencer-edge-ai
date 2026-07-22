@@ -1,0 +1,103 @@
+---
+description: Guide to create shared utilities and helpers - middleware, pagination, response, validation
+alwaysApply: false
+globs: ["**/shared/**/*.go", "**/middleware/**/*.go"]
+---
+
+# Create Helper Rule
+
+Use when adding shared utilities, middleware, or helper packages in masterfabric_go.
+
+## Location
+
+```
+internal/shared/
+├── middleware/     # HTTP middleware (auth, request ID, org context)
+├── errors/         # Domain error types
+├── events/         # Event bus interface
+├── pagination/     # Pagination helpers
+├── response/       # HTTP response helpers
+├── validator/      # Request validation
+```
+
+## Middleware Pattern
+
+```go
+package middleware
+
+func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            token := r.Header.Get("Authorization")
+            // validate token...
+            ctx := context.WithValue(r.Context(), userIDKey, userID)
+            next.ServeHTTP(w, r.WithContext(ctx))
+        })
+    }
+}
+
+func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+    id, ok := ctx.Value(userIDKey).(uuid.UUID)
+    return id, ok
+}
+```
+
+## Response Helpers
+
+```go
+package response
+
+func JSON(w http.ResponseWriter, status int, data interface{}) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(data)
+}
+
+func Created(w http.ResponseWriter, data interface{}) {
+    JSON(w, http.StatusCreated, data)
+}
+
+func NoContent(w http.ResponseWriter) {
+    w.WriteHeader(http.StatusNoContent)
+}
+
+func Error(w http.ResponseWriter, err error) {
+    // Map domain errors to HTTP status codes
+}
+```
+
+## Pagination Helper
+
+```go
+package pagination
+
+type Params struct {
+    Page  int
+    Limit int
+}
+
+func (p Params) Offset() int { return (p.Page - 1) * p.Limit }
+
+func FromRequest(r *http.Request) Params {
+    page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+    limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+    if page < 1 { page = 1 }
+    if limit < 1 || limit > 100 { limit = 20 }
+    return Params{Page: page, Limit: limit}
+}
+```
+
+## Rules
+
+- Helpers are stateless or use dependency injection
+- Shared packages have no domain-specific logic
+- Context values use unexported key types
+- Middleware follows `func(http.Handler) http.Handler` pattern
+
+## Checklist
+
+- [ ] Package in `internal/shared/`
+- [ ] No domain-specific imports
+- [ ] Stateless or DI-based
+- [ ] Well-documented exported functions
+- [ ] Unit tests included

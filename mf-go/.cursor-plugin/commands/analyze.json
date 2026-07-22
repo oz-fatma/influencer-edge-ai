@@ -1,0 +1,7 @@
+{
+  "name": "analyze",
+  "displayName": "Analyze & Build",
+  "description": "Run Go static analysis, formatting, build, and tests",
+  "prompt": "Run the full Go analysis pipeline for the masterfabric_go project:\n\n1. go vet ./... - static analysis\n2. gofmt -l . - check formatting\n3. go build -o /tmp/masterfabric-server ./cmd/server - compile\n4. go test ./... - run tests\n5. go mod tidy - clean dependencies\n\nReport any errors and suggest fixes following masterfabric_go conventions.",
+  "variables": []
+}

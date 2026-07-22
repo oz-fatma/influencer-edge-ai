@@ -1,0 +1,96 @@
+---
+description: Configuration management - environment variables, config loading, secrets handling
+alwaysApply: false
+globs: ["**/config/**/*.go", "**/.env*", "**/main.go"]
+---
+
+# Create Config Rule
+
+Use when adding or reading configuration in masterfabric_go.
+
+## Environment Variables
+
+```bash
+# Database
+DATABASE_URL=postgres://user:pass@localhost:5432/masterfabric?sslmode=disable
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Kafka
+KAFKA_BROKERS=localhost:9092
+
+# Server
+PORT=8080
+
+# JWT
+JWT_SECRET=your-secret-key
+JWT_EXPIRY=24h
+
+# Logging
+LOG_LEVEL=info
+LOG_FORMAT=json
+```
+
+## Reading Config in Go
+
+```go
+func getEnv(key, fallback string) string {
+    if value, exists := os.LookupEnv(key); exists {
+        return value
+    }
+    return fallback
+}
+
+port := getEnv("PORT", "8080")
+dbURL := os.Getenv("DATABASE_URL")
+```
+
+## Database Connection
+
+```go
+config, err := pgxpool.ParseConfig(os.Getenv("DATABASE_URL"))
+if err != nil {
+    log.Fatal("failed to parse database URL", "error", err)
+}
+config.MaxConns = 25
+config.MinConns = 5
+
+db, err := pgxpool.NewWithConfig(ctx, config)
+if err != nil {
+    log.Fatal("failed to connect to database", "error", err)
+}
+defer db.Close()
+```
+
+## Redis Connection
+
+```go
+opt, err := redis.ParseURL(os.Getenv("REDIS_URL"))
+if err != nil {
+    log.Fatal("failed to parse redis URL", "error", err)
+}
+redisClient := redis.NewClient(opt)
+```
+
+## Kafka Connection
+
+```go
+kafkaBrokers := strings.Split(getEnv("KAFKA_BROKERS", "localhost:9092"), ",")
+eventBus := kafka.NewEventBus(kafkaBrokers, log)
+```
+
+## Secrets
+
+- NEVER commit `.env` files with real secrets
+- Use environment variables in production
+- Use `.env.example` as a template
+- Sensitive values: `JWT_SECRET`, `DATABASE_URL`, API keys
+
+## Checklist
+
+- [ ] All config via environment variables (no hardcoded values)
+- [ ] Sensible defaults for development
+- [ ] Connection pooling configured for database
+- [ ] `.env.example` maintained with all required vars
+- [ ] Secrets never logged or exposed in errors

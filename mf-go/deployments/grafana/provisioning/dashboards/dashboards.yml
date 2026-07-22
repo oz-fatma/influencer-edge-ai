@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: mf-go
+    orgId: 1
+    folder: InfluencerEdge
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

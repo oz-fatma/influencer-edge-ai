@@ -1,0 +1,123 @@
+---
+description: Step-by-step guide to create a new HTTP handler with use case, DTO, and route registration
+alwaysApply: false
+globs: ["**/handler/**/*.go", "**/router/*.go"]
+---
+
+# Create Handler Rule
+
+Use when creating a new HTTP handler in masterfabric_go. Equivalent of "create-view" in Flutter.
+
+## Directory Structure
+
+```
+internal/infrastructure/http/handler/<context>/
+├── handler.go          # Handler struct + all HTTP methods
+```
+
+## Step 1: Create DTO
+
+File: `internal/application/<context>/dto/<entity>_dto.go`
+
+```go
+package dto
+
+type CreateEntityRequest struct {
+    Name   string `json:"name" validate:"required"`
+    Status string `json:"status"`
+}
+
+type EntityInfo struct {
+    ID        uuid.UUID `json:"id"`
+    Name      string    `json:"name"`
+    Status    string    `json:"status"`
+    CreatedAt time.Time `json:"created_at"`
+}
+```
+
+## Step 2: Create Use Case
+
+File: `internal/application/<context>/usecase/create_entity.go`
+
+```go
+type CreateEntityUseCase struct {
+    repo     repository.EntityRepository
+    eventBus events.EventBus
+}
+
+func NewCreateEntityUseCase(repo repository.EntityRepository, eventBus events.EventBus) *CreateEntityUseCase {
+    return &CreateEntityUseCase{repo: repo, eventBus: eventBus}
+}
+
+func (uc *CreateEntityUseCase) Execute(ctx context.Context, req dto.CreateEntityRequest) (*dto.EntityInfo, error) {
+    entity := &model.Entity{Name: req.Name, Status: req.Status}
+    if err := uc.repo.Create(ctx, entity); err != nil {
+        return nil, err
+    }
+    _ = uc.eventBus.Publish(ctx, events.TopicXxx, event)
+    return &dto.EntityInfo{ID: entity.ID, ...}, nil
+}
+```
+
+## Step 3: Create Handler
+
+File: `internal/infrastructure/http/handler/<context>/handler.go`
+
+```go
+type Handler struct {
+    createEntityUC *usecase.CreateEntityUseCase
+    entityRepo     repository.EntityRepository
+}
+
+func NewHandler(createUC *usecase.CreateEntityUseCase, repo repository.EntityRepository) *Handler {
+    return &Handler{createEntityUC: createUC, entityRepo: repo}
+}
+
+func (h *Handler) CreateEntity(w http.ResponseWriter, r *http.Request) {
+    var req dto.CreateEntityRequest
+    if err := validator.DecodeAndValidate(r, &req); err != nil {
+        response.JSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+        return
+    }
+    result, err := h.createEntityUC.Execute(r.Context(), req)
+    if err != nil {
+        response.Error(w, err)
+        return
+    }
+    response.Created(w, result)
+}
+```
+
+## Step 4: Register Route
+
+File: `internal/infrastructure/http/router/router.go`
+
+```go
+r.Route("/entities", func(r chi.Router) {
+    r.Post("/", deps.EntityHandler.CreateEntity)
+    r.Get("/", deps.EntityHandler.ListEntities)
+    r.Route("/{entityId}", func(r chi.Router) {
+        r.Get("/", deps.EntityHandler.GetEntity)
+        r.Put("/", deps.EntityHandler.UpdateEntity)
+        r.Delete("/", deps.EntityHandler.DeleteEntity)
+    })
+})
+```
+
+## Step 5: Wire in main.go
+
+```go
+entityRepo := postgresEntity.NewEntityRepo(db)
+createEntityUC := entityUC.NewCreateEntityUseCase(entityRepo, eventBus)
+deps.EntityHandler = entityHandler.NewHandler(createEntityUC, entityRepo)
+```
+
+## Checklist
+
+- [ ] DTO with validation tags in `application/<context>/dto/`
+- [ ] Use case with `Execute()` method in `application/<context>/usecase/`
+- [ ] Handler with chi URL params in `infrastructure/http/handler/<context>/`
+- [ ] Route registered in `router.go`
+- [ ] Dependencies wired in `main.go`
+- [ ] Error responses use `response.Error(w, err)`
+- [ ] Success responses use `response.JSON()`, `response.Created()`, or `response.NoContent()`

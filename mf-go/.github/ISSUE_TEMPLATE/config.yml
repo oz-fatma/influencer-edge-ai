@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/masterfabric-go/masterfabric-go/discussions
+    about: Ask questions and discuss ideas
+  - name: 📚 Documentation
+    url: https://github.com/masterfabric-go/masterfabric-go#readme
+    about: Check the README and documentation
+  - name: 🔒 Security Issue
+    url: https://github.com/masterfabric-go/masterfabric-go/security/advisories/new
+    about: Report a security vulnerability

@@ -1,0 +1,121 @@
+---
+description: Error handling patterns - domain errors, wrapping, HTTP error responses, logging
+alwaysApply: false
+globs: "**/*.go"
+---
+
+# Error Handling Rule
+
+Use when writing Go code that handles errors in MasterFabric Go.
+
+## Pattern 1: Domain Errors
+
+```go
+// Define domain error codes
+const (
+    ErrNotFound     = "not_found"
+    ErrBadRequest   = "bad_request"
+    ErrUnauthorized = "unauthorized"
+    ErrForbidden    = "forbidden"
+    ErrInternal     = "internal"
+    ErrAlreadyExists = "already_exists"
+)
+
+// Create domain errors
+return domainErr.New(domainErr.ErrNotFound, "endpoint not found", nil)
+return domainErr.New(domainErr.ErrBadRequest, "invalid input", err)
+```
+
+## Pattern 2: Error Wrapping
+
+```go
+// ❌ BAD - loses context
+if err != nil {
+    return err
+}
+
+// ✅ GOOD - wraps with context
+if err != nil {
+    return fmt.Errorf("failed to create endpoint: %w", err)
+}
+```
+
+## Pattern 3: Repository Errors
+
+```go
+func (r *EndpointRepo) GetByID(ctx context.Context, id uuid.UUID) (*model.Endpoint, error) {
+    var ep model.Endpoint
+    err := r.db.QueryRow(ctx, query, id).Scan(&ep.ID, ...)
+    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) {
+            return nil, domainErr.New(domainErr.ErrNotFound, "endpoint not found", nil)
+        }
+        return nil, domainErr.New(domainErr.ErrInternal, "failed to get endpoint", err)
+    }
+    return &ep, nil
+}
+```
+
+## Pattern 4: Use Case Error Handling
+
+```go
+func (uc *MyUseCase) Execute(ctx context.Context, id uuid.UUID) error {
+    entity, err := uc.repo.GetByID(ctx, id)
+    if err != nil {
+        return err  // Domain error propagates up
+    }
+
+    if entity.Status == model.StatusRetired {
+        return domainErr.New(domainErr.ErrBadRequest, "entity is already retired", nil)
+    }
+
+    if err := uc.repo.Update(ctx, entity); err != nil {
+        return err
+    }
+
+    _ = uc.eventBus.Publish(ctx, events.TopicAPIManagement, event)
+    return nil
+}
+```
+
+## Pattern 5: HTTP Error Responses
+
+```go
+func (h *Handler) MyHandler(w http.ResponseWriter, r *http.Request) {
+    id, err := uuid.Parse(chi.URLParam(r, "id"))
+    if err != nil {
+        response.JSON(w, http.StatusBadRequest, map[string]string{"error": "invalid id"})
+        return
+    }
+
+    result, err := h.useCase.Execute(r.Context(), id)
+    if err != nil {
+        response.Error(w, err)  // Maps domain errors to HTTP status codes
+        return
+    }
+
+    response.JSON(w, http.StatusOK, result)
+}
+```
+
+## Pattern 6: Structured Error Logging
+
+```go
+if err != nil {
+    logger.Error("database operation failed",
+        "error", err,
+        "table", tableName,
+        "action", endpoint.BackendAction,
+        "service", endpoint.BackendService,
+    )
+}
+```
+
+## Checklist
+
+- [ ] Always check `error` return values
+- [ ] Wrap errors with context using `fmt.Errorf("...: %w", err)`
+- [ ] Use `domainErr.New()` for business logic errors
+- [ ] Check `pgx.ErrNoRows` for not-found cases
+- [ ] Return early on error (guard clauses)
+- [ ] Never ignore errors with `_` unless intentional (event publishing)

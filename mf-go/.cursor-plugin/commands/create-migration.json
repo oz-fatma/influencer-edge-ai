@@ -1,0 +1,18 @@
+{
+  "name": "create-migration",
+  "displayName": "Create Database Migration",
+  "description": "Generate a Goose migration SQL file with multi-tenant columns and proper indexes",
+  "prompt": "Create a new Goose migration for table '{{tableName}}' in internal/infrastructure/postgres/migrations/.\n\nRequirements:\n- Include standard columns: id (UUID PRIMARY KEY), organization_id, app_id, created_at, updated_at\n- Add custom columns: {{columns}}\n- Add foreign key references to organizations(id) and apps(id)\n- Add indexes on organization_id, app_id, and any foreign keys\n- Include both -- +goose Up and -- +goose Down sections\n- Use the next migration number based on existing files\n\nFollow masterfabric_go migration conventions.",
+  "variables": [
+    {
+      "name": "tableName",
+      "description": "Table name (e.g., orders, products)",
+      "required": true
+    },
+    {
+      "name": "columns",
+      "description": "Custom columns (e.g., name VARCHAR(255), status VARCHAR(50), price NUMERIC)",
+      "required": true
+    }
+  ]
+}

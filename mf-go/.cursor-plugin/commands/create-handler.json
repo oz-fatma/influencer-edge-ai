@@ -1,0 +1,18 @@
+{
+  "name": "create-handler",
+  "displayName": "Create HTTP Handler",
+  "description": "Scaffold an HTTP handler with CRUD methods, chi routing, and proper error handling",
+  "prompt": "Create a new HTTP handler for '{{entityName}}' in the '{{contextName}}' context.\n\nGenerate:\n1. Handler struct with use case and repository dependencies\n2. NewHandler constructor\n3. CRUD methods: Create, Get, List, Update, Delete\n4. Use chi.URLParam for path parameters\n5. Use validator.DecodeAndValidate for request parsing\n6. Use response.JSON, response.Created, response.NoContent, response.Error\n7. Register routes in router.go under the appropriate path\n8. Wire dependencies in main.go\n\nFollow masterfabric_go handler conventions from .cursor/rules/create-handler.mdc.",
+  "variables": [
+    {
+      "name": "entityName",
+      "description": "Entity name (e.g., Order, Product)",
+      "required": true
+    },
+    {
+      "name": "contextName",
+      "description": "Bounded context (e.g., tenant, iam, apimanagement)",
+      "required": true
+    }
+  ]
+}

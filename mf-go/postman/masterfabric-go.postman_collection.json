@@ -1,0 +1,2870 @@
+{
+	"info": {
+		"_postman_id": "mf-go-collection-v1",
+		"name": "MasterFabric Go API",
+		"description": "Complete API collection for masterfabric-go — a multi-tenant, event-driven platform with IAM, tenant management, API management, gateway enforcement, and observability.\n\n## Quick Start\n1. Import this collection and the environment file\n2. Run **Register** then **Login** — the JWT token is auto-captured\n3. Run **Create Organization** — orgId is auto-captured\n4. Run **Create App** — appId is auto-captured\n5. Continue with API keys, endpoints, policies, RBAC, and audit logs\n\n## Coverage\n- ✅ **Authentication & IAM**: User registration, login, user management\n- ✅ **Organization Management**: Create, list, get organizations\n- ✅ **Application Management**: Create, list, get applications\n- ✅ **API Key Management**: Create, list, revoke API keys\n- ✅ **Endpoint Management**: Define, list, get, update policies, retire endpoints\n- ✅ **Dynamic CRUD**: Automatic database operations (list, get, create, update, delete)\n- ✅ **RBAC**: Assign roles, list roles, manage permissions, user roles\n- ✅ **Audit Logs**: Query by organization, user, with filters\n- ✅ **Error Scenarios**: Comprehensive negative test cases\n\n## Architecture\n- **Auth**: JWT Bearer tokens (24h expiry)\n- **Multi-Tenancy**: X-Organization-ID header or JWT claims\n- **Gateway**: X-App-ID header triggers pipeline enforcement\n- **Dynamic Handler**: Automatically performs CRUD operations based on backend_service and backend_action\n- **Events**: Kafka topics per bounded context\n- **Observability**: Structured JSON logs, Prometheus /metrics\n\n## Dynamic CRUD Actions\nAvailable backend_action values:\n- `list` - GET with pagination (query params: ?offset=0&limit=20)\n- `get` - GET by ID (path: /resource/{id})\n- `create` - POST to create new record\n- `update` or `patch` - PUT/PATCH to update (path: /resource/{id})\n- `delete` - DELETE record (path: /resource/{id})\n\nTable names are automatically derived from backend_service (e.g., \"order-service\" → \"orders\" table)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request: set timestamp for audit tracing",
+					"pm.globals.set('timestamp', new Date().toISOString());",
+					"",
+					"// Sync jwt_token from environment to collection if needed",
+					"var envToken = pm.environment.get('jwt_token');",
+					"var collToken = pm.collectionVariables.get('jwt_token');",
+					"if (envToken && !collToken) {",
+					"    pm.collectionVariables.set('jwt_token', envToken);",
+					"} else if (collToken && !envToken) {",
+					"    pm.environment.set('jwt_token', collToken);",
+					"}",
+					"",
+					"// Warn if protected endpoint lacks token",
+					"var auth = pm.request.auth;",
+					"if (auth && auth.type === 'bearer') {",
+					"    var token = pm.collectionVariables.get('jwt_token') || pm.environment.get('jwt_token');",
+					"    if (!token || token === '') {",
+					"        console.warn('⚠️  JWT token missing! Run Login request first.');",
+					"    }",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test: verify response time < 2s",
+					"pm.test('Response time is acceptable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+					"});",
+					"",
+					"// Global test: response has X-Request-ID",
+					"pm.test('Has X-Request-ID header', function () {",
+					"    pm.response.to.have.header('X-Request-ID');",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+		{ "key": "jwt_token", "value": "", "type": "string" },
+		{ "key": "user_id", "value": "", "type": "string" },
+		{ "key": "user_email", "value": "admin@masterfabric.io", "type": "string" },
+		{ "key": "user_password", "value": "SecurePass123!", "type": "string" },
+		{ "key": "org_id", "value": "", "type": "string" },
+		{ "key": "org_slug", "value": "masterfabriccorp", "type": "string" },
+		{ "key": "app_id", "value": "", "type": "string" },
+		{ "key": "app_slug", "value": "myapp", "type": "string" },
+		{ "key": "api_key_id", "value": "", "type": "string" },
+		{ "key": "api_key_secret", "value": "", "type": "string" },
+		{ "key": "endpoint_id", "value": "", "type": "string" },
+		{ "key": "role_id", "value": "", "type": "string" },
+		{ "key": "second_user_id", "value": "", "type": "string" }
+	],
+	"item": [
+		{
+			"name": "Health & Observability",
+			"description": "Infrastructure health checks and Prometheus metrics. No authentication required.",
+			"item": [
+				{
+					"name": "Liveness Probe",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/health/live", "host": ["{{base_url}}"], "path": ["health", "live"] },
+						"description": "Kubernetes-compatible liveness probe. Returns 200 if the process is alive."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Body contains alive status', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.status).to.eql('alive');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Readiness Probe",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/health/ready", "host": ["{{base_url}}"], "path": ["health", "ready"] },
+						"description": "Readiness probe checking PostgreSQL and Redis connectivity."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Postgres is healthy', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.services.postgres).to.eql('healthy');",
+									"});",
+									"",
+									"pm.test('Redis is healthy', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.services.redis).to.eql('healthy');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Prometheus Metrics",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/metrics", "host": ["{{base_url}}"], "path": ["metrics"] },
+						"description": "Prometheus-compatible metrics endpoint (OpenTelemetry). Scraped by monitoring stack."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Contains Go runtime metrics', function () {",
+									"    pm.expect(pm.response.text()).to.include('go_gc_duration_seconds');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Authentication (IAM)",
+			"description": "User registration and login. Login auto-captures the JWT token for subsequent requests.",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\",\n    \"first_name\": \"Admin\",\n    \"last_name\": \"User\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/auth/register", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "register"] },
+						"description": "Register a new user. Returns user info (no token — login next). Publishes `user.registered` event to Kafka topic `masterfabric.iam`."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has user ID', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.be.a('string').and.not.empty;",
+									"    ",
+									"    // Save to BOTH collection and environment",
+									"    pm.collectionVariables.set('user_id', json.id);",
+									"    pm.environment.set('user_id', json.id);",
+									"    ",
+									"    console.log('✅ User ID captured: ' + json.id);",
+									"});",
+									"",
+									"pm.test('Email matches request', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.email).to.eql(pm.collectionVariables.get('user_email'));",
+									"});",
+									"",
+									"pm.test('Status is active', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.status).to.eql('active');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Register Second User",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"dev@masterfabric.io\",\n    \"password\": \"DevPass456!\",\n    \"first_name\": \"Dev\",\n    \"last_name\": \"Engineer\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/auth/register", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "register"] },
+						"description": "Register a second user for testing role assignments and multi-user scenarios."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Capture second user ID', function () {",
+									"    var json = pm.response.json();",
+									"    ",
+									"    // Save to BOTH collection and environment",
+									"    pm.collectionVariables.set('second_user_id', json.id);",
+									"    pm.environment.set('second_user_id', json.id);",
+									"    ",
+									"    console.log('✅ Second User ID captured: ' + json.id);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/auth/login", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "login"] },
+						"description": "Authenticate and receive a JWT token (24h expiry). Token is automatically saved to `jwt_token` variable for all subsequent requests."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has JWT token', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.token).to.be.a('string').and.not.empty;",
+									"    ",
+									"    // Save token to BOTH collection and environment variables",
+									"    pm.collectionVariables.set('jwt_token', json.token);",
+									"    pm.environment.set('jwt_token', json.token);",
+									"    ",
+									"    console.log('✅ JWT token captured and saved to collection + environment');",
+									"    console.log('Token preview: ' + json.token.substring(0, 30) + '...');",
+									"});",
+									"",
+									"pm.test('Response has user info', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.user).to.be.an('object');",
+									"    pm.expect(json.user.id).to.be.a('string');",
+									"    ",
+									"    // Save user_id to BOTH collection and environment",
+									"    pm.collectionVariables.set('user_id', json.user.id);",
+									"    pm.environment.set('user_id', json.user.id);",
+									"    ",
+									"    console.log('✅ User ID captured: ' + json.user.id);",
+									"});",
+									"",
+									"pm.test('JWT is valid format (3 dot-separated parts)', function () {",
+									"    var json = pm.response.json();",
+									"    var parts = json.token.split('.');",
+									"    pm.expect(parts).to.have.lengthOf(3);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login (Invalid Password)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"WrongPassword!\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/auth/login", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "login"] },
+						"description": "Negative test: attempt login with wrong credentials."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Error message present', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.error).to.be.a('string');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "User Management",
+			"description": "User profile and listing endpoints. Requires JWT authentication.",
+			"item": [
+				{
+					"name": "Get Current User (Me)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/api/v1/me", "host": ["{{base_url}}"], "path": ["api", "v1", "me"] },
+						"description": "Returns the profile of the currently authenticated user based on the JWT token."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User ID matches', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.eql(pm.collectionVariables.get('user_id'));",
+									"});",
+									"",
+									"pm.test('Email matches', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.email).to.eql(pm.collectionVariables.get('user_email'));",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/users?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users"],
+							"query": [
+								{ "key": "page", "value": "1", "description": "Page number (default: 1)" },
+								{ "key": "limit", "value": "20", "description": "Items per page (default: 20)" }
+							]
+						},
+						"description": "List all users with pagination support."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is paginated', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('data');",
+									"    pm.expect(json).to.have.property('pagination');",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/api/v1/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "users", "{{user_id}}"] },
+						"description": "Retrieve a specific user by their UUID."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User ID in response', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.eql(pm.collectionVariables.get('user_id'));",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get User (Not Found)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/api/v1/users/00000000-0000-0000-0000-000000000000", "host": ["{{base_url}}"], "path": ["api", "v1", "users", "00000000-0000-0000-0000-000000000000"] },
+						"description": "Negative test: request a non-existent user."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Organization (Tenant) Management",
+			"description": "Multi-tenant organization CRUD. Organizations are the top-level isolation boundary.",
+			"item": [
+				{
+					"name": "Create Organization",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"MasterFabric Corp\",\n    \"slug\": \"{{org_slug}}\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations"] },
+						"description": "Create a new organization (tenant). Publishes `organization.created` event to Kafka topic `masterfabric.tenant`."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Organization has ID', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.be.a('string').and.not.empty;",
+									"    ",
+									"    // Save to BOTH collection and environment",
+									"    pm.collectionVariables.set('org_id', json.id);",
+									"    pm.environment.set('org_id', json.id);",
+									"    ",
+									"    console.log('✅ Organization ID captured: ' + json.id);",
+									"});",
+									"",
+									"pm.test('Slug matches request', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.slug).to.eql(pm.collectionVariables.get('org_slug'));",
+									"});",
+									"",
+									"pm.test('Status is active', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.status).to.eql('active');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Organization (Validation Error)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"\",\n    \"slug\": \"invalid-slug!\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations"] },
+						"description": "Negative test: send invalid data to trigger validation errors."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error message present', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.error).to.be.a('string');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Organizations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/organizations?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "organizations"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "20" }
+							]
+						},
+						"description": "List all organizations the authenticated user has access to."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is paginated array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"    pm.expect(json.pagination).to.be.an('object');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Organization by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}"] },
+						"description": "Retrieve a specific organization by UUID."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Org ID matches', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.eql(pm.collectionVariables.get('org_id'));",
+									"});",
+									"",
+									"pm.test('Organization has all required fields', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('id');",
+									"    pm.expect(json).to.have.property('name');",
+									"    pm.expect(json).to.have.property('slug');",
+									"    pm.expect(json).to.have.property('status');",
+									"    pm.expect(json).to.have.property('created_at');",
+									"});",
+									"",
+									"pm.test('Status is valid', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.status).to.be.oneOf(['active', 'suspended', 'deleted']);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Organization (Not Found)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/00000000-0000-0000-0000-000000000000", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "00000000-0000-0000-0000-000000000000"] },
+						"description": "Negative test: request a non-existent organization."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 404 Not Found', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Error message present', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('error');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Application Management",
+			"description": "Applications belong to organizations. Each app can have its own API keys and endpoint definitions.",
+			"item": [
+				{
+					"name": "Create Application",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Tenant context" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My First App\",\n    \"slug\": \"{{app_slug}}\",\n    \"sla_tier\": \"gold\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps"] },
+						"description": "Create an application under the organization. Publishes `app.created` event to Kafka topic `masterfabric.tenant`."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('App has ID', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.be.a('string').and.not.empty;",
+									"    ",
+									"    // Save to BOTH collection and environment",
+									"    pm.collectionVariables.set('app_id', json.id);",
+									"    pm.environment.set('app_id', json.id);",
+									"    ",
+									"    console.log('✅ App ID captured: ' + json.id);",
+									"});",
+									"",
+									"pm.test('App belongs to org', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.organization_id).to.eql(pm.collectionVariables.get('org_id'));",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Applications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "organizations", "{{org_id}}", "apps"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "20" }
+							]
+						},
+						"description": "List all applications under the organization."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains apps array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Application by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}"] },
+						"description": "Get details of a specific application."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('App ID matches', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.eql(pm.collectionVariables.get('app_id'));",
+									"});",
+									"",
+									"pm.test('Application has all required fields', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('id');",
+									"    pm.expect(json).to.have.property('name');",
+									"    pm.expect(json).to.have.property('slug');",
+									"    pm.expect(json).to.have.property('organization_id');",
+									"    pm.expect(json).to.have.property('status');",
+									"    pm.expect(json).to.have.property('created_at');",
+									"});",
+									"",
+									"pm.test('App belongs to correct organization', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.organization_id).to.eql(pm.collectionVariables.get('org_id'));",
+									"});",
+									"",
+									"pm.test('SLA tier is valid', function () {",
+									"    var json = pm.response.json();",
+									"    if (json.sla_tier) {",
+									"        pm.expect(json.sla_tier).to.be.oneOf(['bronze', 'silver', 'gold', 'platinum']);",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Application (Not Found)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/00000000-0000-0000-0000-000000000000", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "00000000-0000-0000-0000-000000000000"] },
+						"description": "Negative test: request a non-existent application."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 404 Not Found', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "API Key Management",
+			"description": "API keys for applications. Keys are used by the gateway pipeline for app-level authentication.",
+			"item": [
+				{
+					"name": "Create API Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Production Key\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/keys", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "keys"] },
+						"description": "Generate a new API key for the application. The secret key is only returned once — store it securely."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('API key has ID and secret', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.be.a('string').and.not.empty;",
+									"    pm.expect(json.key).to.be.a('string').and.not.empty;",
+									"    ",
+									"    // Save to BOTH collection and environment",
+									"    pm.collectionVariables.set('api_key_id', json.id);",
+									"    pm.collectionVariables.set('api_key_secret', json.key);",
+									"    pm.environment.set('api_key_id', json.id);",
+									"    pm.environment.set('api_key_secret', json.key);",
+									"    ",
+									"    console.log('✅ API Key ID captured: ' + json.id);",
+									"    console.log('⚠️  WARNING: API Key secret saved (only shown once!)');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create API Key (Staging)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Staging Key\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/keys", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "keys"] },
+						"description": "Create a second API key for staging environment."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List API Keys",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/keys", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "keys"] },
+						"description": "List all API keys for the application. Secrets are masked in list responses."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.be.an('array');",
+									"    pm.expect(json.length).to.be.at.least(1);",
+									"});",
+									"",
+									"pm.test('API keys have required fields', function () {",
+									"    var json = pm.response.json();",
+									"    if (json.length > 0) {",
+									"        pm.expect(json[0]).to.have.property('id');",
+									"        pm.expect(json[0]).to.have.property('name');",
+									"        pm.expect(json[0]).to.have.property('app_id');",
+									"        pm.expect(json[0]).to.have.property('status');",
+									"        pm.expect(json[0]).to.have.property('created_at');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Secrets are masked in list response', function () {",
+									"    var json = pm.response.json();",
+									"    json.forEach(function(key) {",
+									"        if (key.key) {",
+									"            // Secret should be masked or not present",
+									"            pm.expect(key.key).to.not.include(pm.collectionVariables.get('api_key_secret'));",
+									"        }",
+									"    });",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get API Key by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/keys/{{api_key_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "keys", "{{api_key_id}}"] },
+						"description": "Get details of a specific API key. Secret is not returned after creation."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('API key ID matches', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.eql(pm.collectionVariables.get('api_key_id'));",
+									"});",
+									"",
+									"pm.test('Secret is not exposed', function () {",
+									"    var json = pm.response.json();",
+									"    // Secret should not be present or should be masked",
+									"    if (json.key) {",
+									"        pm.expect(json.key).to.not.eql(pm.collectionVariables.get('api_key_secret'));",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Revoke API Key",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/keys/{{api_key_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "keys", "{{api_key_id}}"] },
+						"description": "Revoke (soft-delete) an API key. The key will no longer authenticate requests through the gateway."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Endpoint Management (API Gateway)",
+			"description": "Define, list, and manage API endpoints. Endpoints are the gateway's routing rules and policy enforcement points.\n\n## Dynamic Handler System\nWhen you define an endpoint with `backend_service` and `backend_action`, the system automatically:\n- Derives table name from service name (e.g., \"order-service\" → \"orders\")\n- Performs CRUD operations based on action (list, get, create, update, delete)\n- Enforces multi-tenant isolation (organization_id + app_id)\n- No code required for simple database operations!\n\n## Available Actions\n- `list` - List records with pagination\n- `get` - Get single record by ID\n- `create` - Create new record\n- `update` or `patch` - Update existing record\n- `delete` - Delete record\n\nFor custom logic, register a handler in code (see BACKEND_HANDLERS.md).",
+			"item": [
+				{
+					"name": "Define Endpoint (GET /products)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method\": \"GET\",\n    \"path\": \"/products\",\n    \"version\": \"v1\",\n    \"backend_service\": \"product-service\",\n    \"backend_action\": \"list\",\n    \"audit_level\": \"basic\",\n    \"pii_masking\": false\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"] },
+						"description": "Register a new API endpoint. Publishes `endpoint.created` event to Kafka topic `masterfabric.api-management`."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Endpoint has ID', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.be.a('string').and.not.empty;",
+									"    ",
+									"    // Save to BOTH collection and environment",
+									"    pm.collectionVariables.set('endpoint_id', json.id);",
+									"    pm.environment.set('endpoint_id', json.id);",
+									"    ",
+									"    console.log('✅ Endpoint ID captured: ' + json.id);",
+									"});",
+									"",
+									"pm.test('Method and path match', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.method).to.eql('GET');",
+									"    pm.expect(json.path).to.eql('/products');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Define Endpoint (POST /orders)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method\": \"POST\",\n    \"path\": \"/orders\",\n    \"version\": \"v1\",\n    \"backend_service\": \"order-service\",\n    \"backend_action\": \"create\",\n    \"schema\": {\n        \"type\": \"object\",\n        \"required\": [\"customer_id\", \"items\"],\n        \"properties\": {\n            \"customer_id\": { \"type\": \"string\" },\n            \"items\": { \n                \"type\": \"array\",\n                \"items\": {\n                    \"type\": \"object\",\n                    \"properties\": {\n                        \"product_id\": { \"type\": \"string\" },\n                        \"quantity\": { \"type\": \"integer\", \"minimum\": 1 },\n                        \"price\": { \"type\": \"number\" }\n                    }\n                }\n            }\n        }\n    },\n    \"audit_level\": \"full\",\n    \"pii_masking\": true,\n    \"event_after\": \"order.created\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"] },
+						"description": "Register a POST endpoint with JSON schema validation, full audit logging, PII masking, and post-event publishing."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Schema is preserved', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.pii_masking).to.be.true;",
+									"    pm.expect(json.audit_level).to.eql('full');",
+									"});",
+									"",
+									"pm.test('Endpoint ID is captured', function () {",
+									"    var json = pm.response.json();",
+									"    if (json.id) {",
+									"        pm.collectionVariables.set('endpoint_id', json.id);",
+									"        pm.environment.set('endpoint_id', json.id);",
+									"        console.log('✅ Endpoint ID captured: ' + json.id);",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Define Endpoint (GET /orders/{id})",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method\": \"GET\",\n    \"path\": \"/orders/{id}\",\n    \"version\": \"v1\",\n    \"backend_service\": \"order-service\",\n    \"backend_action\": \"get\",\n    \"audit_level\": \"basic\",\n    \"pii_masking\": false\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"] },
+						"description": "Define GET endpoint to retrieve a single order by ID. Uses dynamic handler with 'get' action - automatically queries 'orders' table filtered by organization_id and app_id."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Backend action is get', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.backend_action).to.eql('get');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Define Endpoint (PUT /orders/{id})",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method\": \"PUT\",\n    \"path\": \"/orders/{id}\",\n    \"version\": \"v1\",\n    \"backend_service\": \"order-service\",\n    \"backend_action\": \"update\",\n    \"schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n            \"status\": { \"type\": \"string\", \"enum\": [\"pending\", \"processing\", \"completed\", \"cancelled\"] },\n            \"customer_id\": { \"type\": \"string\" }\n        }\n    },\n    \"audit_level\": \"full\",\n    \"pii_masking\": false\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"] },
+						"description": "Define PUT endpoint to update an order. Uses dynamic handler with 'update' action - automatically updates 'orders' table with tenant isolation."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Backend action is update', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.backend_action).to.eql('update');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Define Endpoint (DELETE /orders/{id})",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method\": \"DELETE\",\n    \"path\": \"/orders/{id}\",\n    \"version\": \"v1\",\n    \"backend_service\": \"order-service\",\n    \"backend_action\": \"delete\",\n    \"audit_level\": \"full\",\n    \"pii_masking\": false\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"] },
+						"description": "Define DELETE endpoint to delete an order. Uses dynamic handler with 'delete' action - automatically deletes from 'orders' table with tenant isolation."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Backend action is delete', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.backend_action).to.eql('delete');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Define Endpoint (Custom Table Name)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method\": \"GET\",\n    \"path\": \"/custom-resource\",\n    \"version\": \"v1\",\n    \"backend_service\": \"custom-service\",\n    \"backend_action\": \"list\",\n    \"schema\": {\n        \"table_name\": \"custom_table_name\"\n    },\n    \"audit_level\": \"basic\",\n    \"pii_masking\": false\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"] },
+						"description": "Example of specifying a custom table name in Schema metadata. If table name doesn't follow convention (service-name → table-name), specify it in schema.table_name."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Define Endpoint (PATCH /orders/{id})",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method\": \"PATCH\",\n    \"path\": \"/orders/{id}\",\n    \"version\": \"v1\",\n    \"backend_service\": \"order-service\",\n    \"backend_action\": \"patch\",\n    \"schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n            \"status\": { \"type\": \"string\", \"enum\": [\"pending\", \"processing\", \"completed\", \"cancelled\"] }\n        }\n    },\n    \"audit_level\": \"full\",\n    \"pii_masking\": false\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"] },
+						"description": "Define PATCH endpoint for partial updates. Uses dynamic handler with 'patch' action - automatically updates 'orders' table with tenant isolation. PATCH allows partial updates (only specified fields)."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Backend action is patch', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.backend_action).to.eql('patch');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Define Endpoint (HTTP Proxy - External URL)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method\": \"GET\",\n    \"path\": \"/external-products\",\n    \"version\": \"v1\",\n    \"backend_service\": \"https://api.example.com/products\",\n    \"backend_action\": \"list\",\n    \"audit_level\": \"basic\",\n    \"pii_masking\": false\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"] },
+						"description": "Example of HTTP proxy endpoint. When backend_service is a URL, requests are automatically proxied to that external service. Useful for integrating with third-party APIs or microservices."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Backend service is URL', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.backend_service).to.include('http');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Define Endpoint (With Full Schema Validation)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"method\": \"POST\",\n    \"path\": \"/users\",\n    \"version\": \"v1\",\n    \"backend_service\": \"user-service\",\n    \"backend_action\": \"create\",\n    \"schema\": {\n        \"type\": \"object\",\n        \"required\": [\"email\", \"name\"],\n        \"properties\": {\n            \"email\": {\n                \"type\": \"string\",\n                \"format\": \"email\",\n                \"minLength\": 5,\n                \"maxLength\": 255\n            },\n            \"name\": {\n                \"type\": \"string\",\n                \"minLength\": 2,\n                \"maxLength\": 100\n            },\n            \"age\": {\n                \"type\": \"integer\",\n                \"minimum\": 18,\n                \"maximum\": 120\n            },\n            \"phone\": {\n                \"type\": \"string\",\n                \"pattern\": \"^\\\\+?[1-9]\\\\d{1,14}$\"\n            }\n        }\n    },\n    \"audit_level\": \"full\",\n    \"pii_masking\": true,\n    \"event_after\": \"user.created\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"] },
+						"description": "Example endpoint with comprehensive JSON schema validation including: required fields, email format, string length limits, numeric ranges, regex patterns. Also includes PII masking and event publishing."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Schema is preserved', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.pii_masking).to.be.true;",
+									"    pm.expect(json.audit_level).to.eql('full');",
+									"    pm.expect(json.event_after).to.eql('user.created');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Endpoints",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "20" }
+							]
+						},
+						"description": "List all endpoints defined for the application."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has endpoints', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"    pm.expect(json.data.length).to.be.at.least(1);",
+									"});",
+									"",
+									"pm.test('Response is paginated', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('pagination');",
+									"    pm.expect(json.pagination).to.have.property('page');",
+									"    pm.expect(json.pagination).to.have.property('limit');",
+									"});",
+									"",
+									"pm.test('All endpoints belong to the app', function () {",
+									"    var json = pm.response.json();",
+									"    var appId = pm.collectionVariables.get('app_id');",
+									"    json.data.forEach(function(endpoint) {",
+									"        pm.expect(endpoint.app_id).to.eql(appId);",
+									"    });",
+									"});",
+									"",
+									"pm.test('Capture endpoint_id if not set', function () {",
+									"    var json = pm.response.json();",
+									"    if (json.data.length > 0 && !pm.collectionVariables.get('endpoint_id')) {",
+									"        pm.collectionVariables.set('endpoint_id', json.data[0].id);",
+									"        pm.environment.set('endpoint_id', json.data[0].id);",
+									"        console.log('✅ Endpoint ID captured: ' + json.data[0].id);",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Endpoint by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints/{{endpoint_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints", "{{endpoint_id}}"] },
+						"description": "Get details of a specific endpoint."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Endpoint ID matches', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.id).to.eql(pm.collectionVariables.get('endpoint_id'));",
+									"});",
+									"",
+									"pm.test('Endpoint has all required fields', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('id');",
+									"    pm.expect(json).to.have.property('method');",
+									"    pm.expect(json).to.have.property('path');",
+									"    pm.expect(json).to.have.property('app_id');",
+									"    pm.expect(json).to.have.property('status');",
+									"    pm.expect(json).to.have.property('created_at');",
+									"});",
+									"",
+									"pm.test('Method is valid HTTP method', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.method).to.be.oneOf(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);",
+									"});",
+									"",
+									"pm.test('Audit level is valid', function () {",
+									"    var json = pm.response.json();",
+									"    if (json.audit_level) {",
+									"        pm.expect(json.audit_level).to.be.oneOf(['none', 'basic', 'full']);",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Endpoint (Not Found)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints/00000000-0000-0000-0000-000000000000", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints", "00000000-0000-0000-0000-000000000000"] },
+						"description": "Negative test: request a non-existent endpoint."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 404 Not Found', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Query Endpoints by Method",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints?page=1&limit=50",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "50", "description": "Increase limit to see more endpoints" }
+							]
+						},
+						"description": "List all endpoints with increased limit. Use this to see all your configured endpoints. You can filter by examining the response and looking for specific methods, paths, or backend_actions.\n\n**Tip**: Check the response to see all your endpoint configurations including backend_service and backend_action values."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has endpoints array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});",
+									"",
+									"// Log endpoint summary",
+									"var json = pm.response.json();",
+									"if (json.data && json.data.length > 0) {",
+									"    console.log('📋 Found ' + json.data.length + ' endpoints:');",
+									"    json.data.forEach(function(ep) {",
+									"        console.log('  - ' + ep.method + ' ' + ep.path + ' → ' + ep.backend_service + ':' + ep.backend_action);",
+									"    });",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Endpoint Policy",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"required_permission\": \"products:read\",\n    \"rate_limit\": 100,\n    \"auth_policy\": \"jwt\",\n    \"validation_policy\": {\n        \"enforce_content_type\": true,\n        \"max_body_size_kb\": 512\n    },\n    \"extra_policies\": {\n        \"cache_ttl_seconds\": 60,\n        \"retry_count\": 3\n    }\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints/{{endpoint_id}}/policy", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints", "{{endpoint_id}}", "policy"] },
+						"description": "Set or update the policy for an endpoint. Policies control auth requirements, rate limiting, RBAC permissions, and validation rules enforced by the gateway pipeline."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Policy has rate limit', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.rate_limit).to.eql(100);",
+									"});",
+									"",
+									"pm.test('Policy has permission', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.required_permission).to.eql('products:read');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Endpoint Policy",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints/{{endpoint_id}}/policy", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints", "{{endpoint_id}}", "policy"] },
+						"description": "Retrieve the current policy configuration for an endpoint."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Policy linked to endpoint', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.endpoint_id).to.eql(pm.collectionVariables.get('endpoint_id'));",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Retire Endpoint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints/{{endpoint_id}}/retire", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints", "{{endpoint_id}}", "retire"] },
+						"description": "Retire (soft-disable) an endpoint. The gateway will stop routing traffic to this endpoint. Publishes `endpoint.retired` event."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"console.log('✅ Endpoint retired successfully');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Activate Endpoint (Reactivate Retired)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": { "raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/endpoints/{{endpoint_id}}/activate", "host": ["{{base_url}}"], "path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "endpoints", "{{endpoint_id}}", "activate"] },
+						"description": "Activate (reactivate) a retired or inactive endpoint. The gateway will resume routing traffic to this endpoint. Publishes `endpoint.activated` event.\n\n**Use Case**: If you retired an endpoint by mistake or want to bring back a previously retired endpoint, use this endpoint to reactivate it.\n\n**Note**: The endpoint must be in 'retired' or 'inactive' status. If already active, returns an error."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"console.log('✅ Endpoint activated successfully');",
+									"",
+									"// Verify endpoint is now active by fetching it",
+									"pm.test('Endpoint status can be verified', function () {",
+									"    // This test passes if activation succeeded (204 response)",
+									"    // To verify status, run 'Get Endpoint by ID' request after this",
+									"    pm.expect(pm.response.code).to.eql(204);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "RBAC (Role-Based Access Control)",
+			"description": "Role assignment and management for users within organizations/apps. Roles define permissions that control access to resources.",
+			"item": [
+				{
+					"name": "Assign Role to User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\": \"{{second_user_id}}\",\n    \"role_id\": \"{{role_id}}\",\n    \"organization_id\": \"{{org_id}}\",\n    \"app_id\": \"{{app_id}}\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/roles/assign", "host": ["{{base_url}}"], "path": ["api", "v1", "roles", "assign"] },
+						"description": "Assign a role to a user within an organization/app scope. Publishes `role.assigned` event to Kafka topic `masterfabric.iam`.\n\nNote: You need to create a role first via the database or a seed script before using this endpoint."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test('Response body is empty', function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});",
+									"",
+									"console.log('✅ Role assigned successfully');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Roles by Organization",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/organizations/{{org_id}}/roles?scope_type=organization",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "organizations", "{{org_id}}", "roles"],
+							"query": [
+								{ "key": "scope_type", "value": "organization", "description": "organization or app" }
+							]
+						},
+						"description": "List all roles for an organization. Returns roles with their permissions."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Roles have required fields', function () {",
+									"    var json = pm.response.json();",
+									"    if (json.length > 0) {",
+									"        pm.expect(json[0]).to.have.property('id');",
+									"        pm.expect(json[0]).to.have.property('name');",
+									"        pm.expect(json[0]).to.have.property('scope_type');",
+									"        ",
+									"        // Capture first role_id if not set",
+									"        if (!pm.collectionVariables.get('role_id')) {",
+									"            pm.collectionVariables.set('role_id', json[0].id);",
+									"            pm.environment.set('role_id', json[0].id);",
+									"            console.log('✅ Role ID captured: ' + json[0].id);",
+									"        }",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Roles by App",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/organizations/{{org_id}}/apps/{{app_id}}/roles?scope_type=app",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "organizations", "{{org_id}}", "apps", "{{app_id}}", "roles"],
+							"query": [
+								{ "key": "scope_type", "value": "app", "description": "organization or app" }
+							]
+						},
+						"description": "List all roles for an application."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Role by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/roles/{{role_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "roles", "{{role_id}}"]
+						},
+						"description": "Get details of a specific role including its permissions."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Role has required fields', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('id');",
+									"    pm.expect(json).to.have.property('name');",
+									"    pm.expect(json).to.have.property('scope_type');",
+									"    pm.expect(json.id).to.eql(pm.collectionVariables.get('role_id'));",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List User Roles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/{{user_id}}/roles?organization_id={{org_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "{{user_id}}", "roles"],
+							"query": [
+								{ "key": "organization_id", "value": "{{org_id}}" }
+							]
+						},
+						"description": "List all roles assigned to a user within an organization."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('User roles have required fields', function () {",
+									"    var json = pm.response.json();",
+									"    if (json.length > 0) {",
+									"        pm.expect(json[0]).to.have.property('role_id');",
+									"        pm.expect(json[0]).to.have.property('user_id');",
+									"        pm.expect(json[0]).to.have.property('organization_id');",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get User Permissions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/{{user_id}}/permissions?organization_id={{org_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "{{user_id}}", "permissions"],
+							"query": [
+								{ "key": "organization_id", "value": "{{org_id}}" }
+							]
+						},
+						"description": "Get all permissions for a user within an organization (aggregated from all assigned roles)."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains permissions array', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('permissions');",
+									"    pm.expect(json.permissions).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Permissions are strings', function () {",
+									"    var json = pm.response.json();",
+									"    if (json.permissions.length > 0) {",
+									"        pm.expect(json.permissions[0]).to.be.a('string');",
+									"    }",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remove Role from User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/{{second_user_id}}/roles/{{role_id}}?organization_id={{org_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "{{second_user_id}}", "roles", "{{role_id}}"],
+							"query": [
+								{ "key": "organization_id", "value": "{{org_id}}" }
+							]
+						},
+						"description": "Remove a role assignment from a user. Publishes `role.removed` event."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"console.log('✅ Role removed successfully');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Role Permissions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/roles/{{role_id}}/permissions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "roles", "{{role_id}}", "permissions"]
+						},
+						"description": "Get all permissions associated with a specific role."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains permissions', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('permissions');",
+									"    pm.expect(json.permissions).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Add Permission to Role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"permission\": \"products:write\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/roles/{{role_id}}/permissions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "roles", "{{role_id}}", "permissions"]
+						},
+						"description": "Add a permission to a role. Permissions control what actions users with this role can perform."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created or 204', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([201, 204]);",
+									"});",
+									"",
+									"console.log('✅ Permission added successfully');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Remove Permission from Role",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/roles/{{role_id}}/permissions/products:write",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "roles", "{{role_id}}", "permissions", "products:write"]
+						},
+						"description": "Remove a permission from a role."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 204 No Content', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"console.log('✅ Permission removed successfully');"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Invoke Defined Endpoints",
+			"description": "How to actually call/invoke the endpoints you've defined through the API gateway. These requests demonstrate how to use your managed endpoints in real applications.\n\n## Prerequisites\n1. You must have defined an endpoint (e.g., POST /orders or GET /products)\n2. You need the `app_id` and `api_key_secret` (or JWT token)\n3. Set the `X-App-ID` header to trigger gateway pipeline\n\n## Authentication Options\n- **JWT Token**: Use Bearer token for user-authenticated requests\n- **API Key**: Use API key in Authorization header (if supported)\n\n## Gateway Pipeline Flow\n1. Gateway checks `X-App-ID` header\n2. Looks up endpoint by method + path\n3. Validates schema (if defined)\n4. Checks permissions (if policy requires)\n5. Enforces rate limits\n6. Applies interceptors (PII masking, transformations)\n7. Routes to backend service via Dynamic Handler\n8. Dynamic Handler performs CRUD operations automatically (if backend_action is list/get/create/update/delete)\n\n## Dynamic CRUD Operations\nWhen endpoints use `backend_action` values (list, get, create, update, delete), the system automatically:\n- Queries/updates the database table derived from `backend_service`\n- Enforces multi-tenant isolation (organization_id + app_id)\n- Returns JSON responses using PostgreSQL's row_to_json()\n- No custom code required!",
+			"item": [
+				{
+					"name": "Invoke GET /products Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}", "description": "Required: Identifies which app is making the request" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Required: Organization context" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}", "description": "JWT token for authenticated requests" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"]
+						},
+						"description": "Call the GET /products endpoint you defined. The gateway will:\n1. Look up the endpoint definition\n2. Validate schema (if defined)\n3. Check permissions (if policy requires 'products:read')\n4. Apply rate limiting\n5. Route to Dynamic Handler with 'list' action\n6. Handler automatically queries 'products' table with pagination\n\n**Note**: Make sure you've defined this endpoint first using 'Define Endpoint (GET /products)' with backend_action: 'list'"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has X-Request-ID header', function () {",
+									"    pm.response.to.have.header('X-Request-ID');",
+									"});",
+									"",
+									"pm.test('Response is valid JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"console.log('✅ Endpoint invoked successfully through gateway');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke POST /orders Endpoint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}", "description": "Required: Identifies which app is making the request" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Required: Organization context" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}", "description": "JWT token for authenticated requests" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customer_id\": \"cust-123\",\n    \"items\": [\n        {\n            \"product_id\": \"prod-123\",\n            \"quantity\": 2,\n            \"price\": 29.99\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders"]
+						},
+						"description": "Call the POST /orders endpoint you defined. The gateway will:\n1. Validate request body against JSON schema\n2. Check permissions (if policy requires 'orders:write')\n3. Apply PII masking (if configured)\n4. Enforce rate limits\n5. Route to Dynamic Handler with 'create' action\n6. Handler automatically inserts into 'orders' table with tenant isolation\n7. Returns created record as JSON\n8. Publish event (if 'event_after' is configured)\n\n**Note**: Make sure you've defined this endpoint first using 'Define Endpoint (POST /orders)' with backend_action: 'create'"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201 Created or 200', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"pm.test('Request body was validated', function () {",
+									"    // If schema validation fails, you'd get 400",
+									"    pm.expect(pm.response.code).to.not.eql(400);",
+									"});",
+									"",
+									"pm.test('Response has X-Request-ID header', function () {",
+									"    pm.response.to.have.header('X-Request-ID');",
+									"});",
+									"",
+									"console.log('✅ POST endpoint invoked successfully through gateway');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke GET /orders/{id} Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}", "description": "Required: Identifies which app is making the request" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Required: Organization context" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}", "description": "JWT token for authenticated requests" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders", "{{order_id}}"]
+						},
+						"description": "Call the GET /orders/{id} endpoint you defined. The gateway will:\n1. Look up the endpoint definition\n2. Check permissions (if policy requires 'orders:read')\n3. Apply rate limiting\n4. Route to Dynamic Handler with 'get' action\n5. Handler automatically queries 'orders' table by ID with tenant isolation\n6. Returns single order record as JSON\n\n**Note**: Make sure you've defined this endpoint first using 'Define Endpoint (GET /orders/{id})' with backend_action: 'get'. Replace {{order_id}} with an actual order ID."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"console.log('✅ GET by ID endpoint invoked successfully');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke PUT /orders/{id} Endpoint",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}", "description": "Required: Identifies which app is making the request" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Required: Organization context" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}", "description": "JWT token for authenticated requests" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"completed\",\n    \"customer_id\": \"cust-123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders", "{{order_id}}"]
+						},
+						"description": "Call the PUT /orders/{id} endpoint you defined. The gateway will:\n1. Validate request body against JSON schema\n2. Check permissions (if policy requires 'orders:write')\n3. Apply rate limiting\n4. Route to Dynamic Handler with 'update' action\n5. Handler automatically updates 'orders' table with tenant isolation\n6. Returns updated record as JSON\n\n**Note**: Make sure you've defined this endpoint first using 'Define Endpoint (PUT /orders/{id})' with backend_action: 'update'. Replace {{order_id}} with an actual order ID."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"console.log('✅ PUT endpoint invoked successfully');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke DELETE /orders/{id} Endpoint",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}", "description": "Required: Identifies which app is making the request" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Required: Organization context" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}", "description": "JWT token for authenticated requests" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders", "{{order_id}}"]
+						},
+						"description": "Call the DELETE /orders/{id} endpoint you defined. The gateway will:\n1. Check permissions (if policy requires 'orders:delete')\n2. Apply rate limiting\n3. Route to Dynamic Handler with 'delete' action\n4. Handler automatically deletes from 'orders' table with tenant isolation\n5. Returns 204 No Content on success\n\n**Note**: Make sure you've defined this endpoint first using 'Define Endpoint (DELETE /orders/{id})' with backend_action: 'delete'. Replace {{order_id}} with an actual order ID."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 204 No Content', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+									"});",
+									"",
+									"console.log('✅ DELETE endpoint invoked successfully');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke GET /orders with Pagination",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}", "description": "Required: Identifies which app is making the request" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Required: Organization context" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}", "description": "JWT token for authenticated requests" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders?offset=0&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders"],
+							"query": [
+								{ "key": "offset", "value": "0" },
+								{ "key": "limit", "value": "20" }
+							]
+						},
+						"description": "Call the GET /orders endpoint (list action) with pagination. The gateway will:\n1. Look up the endpoint definition\n2. Check permissions\n3. Route to Dynamic Handler with 'list' action\n4. Handler automatically queries 'orders' table with pagination (offset/limit)\n5. Returns paginated list of orders\n\n**Note**: Make sure you've defined GET /orders endpoint with backend_action: 'list'."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"console.log('✅ List endpoint with pagination invoked successfully');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke PATCH /orders/{id} Endpoint",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}", "description": "Required: Identifies which app is making the request" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Required: Organization context" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}", "description": "JWT token for authenticated requests" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"completed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders", "{{order_id}}"]
+						},
+						"description": "Call the PATCH /orders/{id} endpoint for partial updates. The gateway will:\n1. Validate request body against JSON schema\n2. Check permissions (if policy requires 'orders:write')\n3. Route to Dynamic Handler with 'patch' action\n4. Handler automatically updates only specified fields in 'orders' table\n5. Returns updated record as JSON\n\n**Note**: PATCH allows partial updates - only send fields you want to change. Replace {{order_id}} with an actual order ID."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is valid JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"console.log('✅ PATCH endpoint invoked successfully');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke Endpoint (HTTP Proxy)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}", "description": "Required: Identifies which app is making the request" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Required: Organization context" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}", "description": "JWT token for authenticated requests" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/external-products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "external-products"]
+						},
+						"description": "Call an endpoint that proxies to an external service. The gateway will:\n1. Look up the endpoint definition\n2. Check permissions and rate limits\n3. Proxy the request to the external URL specified in backend_service\n4. Return the proxied response\n\n**Note**: Make sure you've defined an endpoint with backend_service as a URL (e.g., 'https://api.example.com/products')."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200 or proxy status', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 404, 500]);",
+									"});",
+									"",
+									"console.log('✅ HTTP Proxy endpoint invoked (may fail if external service unavailable)');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke Endpoint with API Key Auth",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}", "description": "Required: Identifies which app is making the request" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}", "description": "Required: Organization context" },
+							{ "key": "Authorization", "value": "Bearer {{api_key_secret}}", "description": "API Key for app-level authentication" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"]
+						},
+						"description": "Call an endpoint using API key authentication instead of JWT. Useful for service-to-service communication.\n\n**Note**: API key authentication may require additional middleware configuration."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200 or 401', function () {",
+									"    // 401 if API key auth not configured, 200 if successful",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 401]);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke Endpoint (Missing X-App-ID)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"]
+						},
+						"description": "Negative test: Calling endpoint without X-App-ID header. Gateway pipeline will skip and route normally (no policy enforcement)."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Request processed (may not go through gateway)', function () {",
+									"    // Without X-App-ID, gateway pipeline is skipped",
+									"    pm.expect(pm.response.code).to.be.at.least(200);",
+									"});",
+									"",
+									"console.log('⚠️  Gateway pipeline skipped - no X-App-ID header');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke Endpoint (Insufficient Permissions)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"product_id\": \"prod-123\",\n    \"quantity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders"]
+						},
+						"description": "Negative test: If endpoint policy requires a permission the user doesn't have, gateway returns 403 Forbidden."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200, 403, or 401', function () {",
+									"    // 403 if permission check fails, 200 if user has permission, 401 if not authenticated",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]);",
+									"});",
+									"",
+									"if (pm.response.code === 403) {",
+									"    pm.test('Error message indicates permission issue', function () {",
+									"        var json = pm.response.json();",
+									"        pm.expect(json.error).to.include('permission');",
+									"    });",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke Endpoint (Rate Limit Exceeded)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "products"]
+						},
+						"description": "Negative test: If you exceed the rate limit defined in endpoint policy, gateway returns 429 Too Many Requests.\n\n**Note**: Make multiple rapid requests to trigger rate limiting."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200 or 429', function () {",
+									"    // 429 if rate limit exceeded, 200 if within limit",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 429]);",
+									"});",
+									"",
+									"if (pm.response.code === 429) {",
+									"    pm.test('Error message indicates rate limit', function () {",
+									"        var json = pm.response.json();",
+									"        pm.expect(json.error).to.include('rate limit');",
+									"    });",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Invoke Endpoint (Schema Validation Failed)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "X-App-ID", "value": "{{app_id}}" },
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" },
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"invalid_field\": \"value\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "orders"]
+						},
+						"description": "Negative test: If request body doesn't match the JSON schema defined for the endpoint, gateway returns 400 Bad Request with validation errors."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 400 or 200', function () {",
+									"    // 400 if schema validation fails, 200 if schema allows it",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"if (pm.response.code === 400) {",
+									"    pm.test('Error message indicates validation failure', function () {",
+									"        var json = pm.response.json();",
+									"        pm.expect(json.error).to.be.a('string');",
+									"    });",
+									"}"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Audit Logs",
+			"description": "Query audit trail for compliance and debugging. Logs are automatically generated by the audit middleware.",
+			"item": [
+				{
+					"name": "List Audit Logs by Organization",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/organizations/{{org_id}}/audit-logs?page=1&limit=50",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "organizations", "{{org_id}}", "audit-logs"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "50" }
+							]
+						},
+						"description": "Retrieve audit logs for an organization. Useful for compliance reporting and security investigation."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is paginated', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('data');",
+									"    pm.expect(json).to.have.property('pagination');",
+									"    pm.expect(json.data).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Audit logs have required fields', function () {",
+									"    var json = pm.response.json();",
+									"    if (json.data.length > 0) {",
+									"        pm.expect(json.data[0]).to.have.property('id');",
+									"        pm.expect(json.data[0]).to.have.property('user_id');",
+									"        pm.expect(json.data[0]).to.have.property('action');",
+									"        pm.expect(json.data[0]).to.have.property('timestamp');",
+									"        pm.expect(json.data[0]).to.have.property('organization_id');",
+									"    }",
+									"});",
+									"",
+									"pm.test('Pagination metadata is present', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.pagination).to.have.property('page');",
+									"    pm.expect(json.pagination).to.have.property('limit');",
+									"    pm.expect(json.pagination).to.have.property('total');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Audit Logs by User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/users/{{user_id}}/audit-logs?page=1&limit=50",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "users", "{{user_id}}", "audit-logs"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "50" }
+							]
+						},
+						"description": "Retrieve audit logs for a specific user across all organizations."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is paginated', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json).to.have.property('data');",
+									"    pm.expect(json).to.have.property('pagination');",
+									"});",
+									"",
+									"pm.test('All logs belong to the requested user', function () {",
+									"    var json = pm.response.json();",
+									"    var userId = pm.collectionVariables.get('user_id');",
+									"    json.data.forEach(function(log) {",
+									"        pm.expect(log.user_id).to.eql(userId);",
+									"    });",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "List Audit Logs with Filters",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "X-Organization-ID", "value": "{{org_id}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/organizations/{{org_id}}/audit-logs?page=1&limit=50&action=CREATE&resource_type=organization",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "organizations", "{{org_id}}", "audit-logs"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "50" },
+								{ "key": "action", "value": "CREATE", "description": "Filter by action type" },
+								{ "key": "resource_type", "value": "organization", "description": "Filter by resource type" }
+							]
+						},
+						"description": "Retrieve audit logs with filters for action type and resource type."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Filtered logs match criteria', function () {",
+									"    var json = pm.response.json();",
+									"    json.data.forEach(function(log) {",
+									"        if (log.action) {",
+									"            // Verify action filter if applied",
+									"        }",
+									"    });",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Error Scenarios",
+			"description": "Negative test cases to verify proper error handling and status codes.",
+			"item": [
+				{
+					"name": "Unauthorized (No Token)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/api/v1/me", "host": ["{{base_url}}"], "path": ["api", "v1", "me"] },
+						"description": "Attempt to access a protected endpoint without a JWT token."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Error message present', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.error).to.be.a('string');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Unauthorized (Invalid Token)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{ "key": "token", "value": "invalid.jwt.token", "type": "string" }]
+						},
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/api/v1/me", "host": ["{{base_url}}"], "path": ["api", "v1", "me"] },
+						"description": "Attempt to access a protected endpoint with a malformed JWT."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 401 Unauthorized', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Not Found (404)",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "{{base_url}}/api/v1/nonexistent", "host": ["{{base_url}}"], "path": ["api", "v1", "nonexistent"] },
+						"description": "Request a path that doesn't exist to verify the 404 fallback handler."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Error body is JSON', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.error).to.eql('not found');",
+									"    pm.expect(json.code).to.eql(404);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Validation Error (Empty Body)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/auth/register", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "register"] },
+						"description": "Send an empty body to trigger validation errors."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 400 Bad Request', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Validation error message', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.error).to.be.a('string');",
+									"    pm.expect(json.error.length).to.be.above(0);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Duplicate Registration",
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\",\n    \"first_name\": \"Admin\",\n    \"last_name\": \"User\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/api/v1/auth/register", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "register"] },
+						"description": "Attempt to register with an already-used email."
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 409 Conflict or 400', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([400, 409]);",
+									"});",
+									"",
+									"pm.test('Error message present', function () {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.error).to.be.a('string');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

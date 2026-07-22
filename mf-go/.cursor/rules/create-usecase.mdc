@@ -1,0 +1,103 @@
+---
+description: Step-by-step guide to create a new use case with domain model, repository, and events
+alwaysApply: false
+globs: ["**/usecase/**/*.go", "**/domain/**/*.go"]
+---
+
+# Create Use Case Rule
+
+Use when adding new business logic in masterfabric_go. Equivalent of "create-base-widget" in Flutter.
+
+## Step 1: Define Domain Model
+
+File: `internal/domain/<context>/model/<entity>.go`
+
+```go
+package model
+
+type EntityStatus string
+
+const (
+    EntityStatusActive   EntityStatus = "active"
+    EntityStatusInactive EntityStatus = "inactive"
+)
+
+type Entity struct {
+    ID             uuid.UUID    `json:"id"`
+    OrganizationID uuid.UUID   `json:"organization_id"`
+    AppID          uuid.UUID    `json:"app_id"`
+    Name           string       `json:"name"`
+    Status         EntityStatus `json:"status"`
+    CreatedAt      time.Time    `json:"created_at"`
+    UpdatedAt      time.Time    `json:"updated_at"`
+}
+```
+
+## Step 2: Define Repository Interface
+
+File: `internal/domain/<context>/repository/<entity>_repository.go`
+
+```go
+package repository
+
+type EntityRepository interface {
+    Create(ctx context.Context, entity *model.Entity) error
+    GetByID(ctx context.Context, id uuid.UUID) (*model.Entity, error)
+    Update(ctx context.Context, entity *model.Entity) error
+    Delete(ctx context.Context, id uuid.UUID) error
+    ListByApp(ctx context.Context, appID uuid.UUID, offset, limit int) ([]*model.Entity, int, error)
+}
+```
+
+## Step 3: Define Domain Events
+
+File: `internal/domain/<context>/event/events.go`
+
+```go
+package event
+
+type EntityCreated struct {
+    EntityID  uuid.UUID `json:"entity_id"`
+    AppID     uuid.UUID `json:"app_id"`
+    Timestamp time.Time `json:"timestamp"`
+}
+```
+
+## Step 4: Create Use Case
+
+File: `internal/application/<context>/usecase/create_entity.go`
+
+```go
+type CreateEntityUseCase struct {
+    entityRepo repository.EntityRepository
+    eventBus   events.EventBus
+}
+
+func NewCreateEntityUseCase(repo repository.EntityRepository, bus events.EventBus) *CreateEntityUseCase {
+    return &CreateEntityUseCase{entityRepo: repo, eventBus: bus}
+}
+
+func (uc *CreateEntityUseCase) Execute(ctx context.Context, req dto.CreateEntityRequest) (*dto.EntityInfo, error) {
+    // Validate business rules
+    // Create entity
+    // Publish event
+    // Return DTO
+}
+```
+
+## Rules
+
+- One use case per file, one action per use case
+- Constructor accepts interfaces (dependency injection)
+- `Execute()` is the single entry point
+- Return DTOs, not domain models
+- Publish events after successful operations
+
+## Checklist
+
+- [ ] Model in `domain/<context>/model/` with no external deps
+- [ ] Repository interface in `domain/<context>/repository/`
+- [ ] Event struct in `domain/<context>/event/`
+- [ ] Use case in `application/<context>/usecase/`
+- [ ] DTO in `application/<context>/dto/`
+- [ ] Events published after successful state changes

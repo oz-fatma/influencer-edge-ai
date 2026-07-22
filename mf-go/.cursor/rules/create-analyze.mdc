@@ -1,0 +1,98 @@
+---
+description: Run Go analysis, formatting, testing, and build - use before commit or when debugging
+alwaysApply: false
+globs: ["**/*.go", "**/go.mod", "**/go.sum"]
+---
+
+# Create Analyze Rule
+
+Use when analyzing code quality, fixing issues, or preparing Go code for commit.
+
+## Commands
+
+### Static Analysis
+
+```bash
+go vet ./...
+```
+
+Finds: suspicious constructs, unreachable code, incorrect printf calls.
+
+### Format Code
+
+```bash
+gofmt -w .
+# or
+goimports -w .
+```
+
+Formats all Go files and organizes imports.
+
+### Build
+
+```bash
+go build -o /tmp/masterfabric-server ./cmd/server
+```
+
+Compile and check for errors without running.
+
+### Run Tests
+
+```bash
+go test ./...
+go test -v ./internal/...
+go test -race ./...          # Race condition detection
+go test -cover ./...         # Coverage report
+```
+
+### Lint (if golangci-lint installed)
+
+```bash
+golangci-lint run ./...
+```
+
+### Database Migrations
+
+```bash
+# Apply migrations
+goose -dir internal/infrastructure/postgres/migrations postgres "$DATABASE_URL" up
+
+# Rollback last migration
+goose -dir internal/infrastructure/postgres/migrations postgres "$DATABASE_URL" down
+
+# Check status
+goose -dir internal/infrastructure/postgres/migrations postgres "$DATABASE_URL" status
+```
+
+### Dependency Management
+
+```bash
+go mod tidy        # Remove unused, add missing
+go mod download    # Download dependencies
+go mod verify      # Verify dependencies
+```
+
+## Typical Workflow
+
+1. Make code changes
+2. `go vet ./...` - fix any issues
+3. `gofmt -w .` - format code
+4. `go build ./cmd/server` - verify compilation
+5. `go test ./...` - run tests
+6. `go mod tidy` - clean dependencies
+
+## Common Fixes
+
+- Add missing error checks
+- Remove unused variables/imports
+- Fix incorrect struct tags
+- Add missing `context.Context` parameter
+- Fix nil pointer dereferences
+
+## Checklist
+
+- [ ] `go vet ./...` passes with no errors
+- [ ] `go build` compiles successfully
+- [ ] `go test ./...` all tests pass
+- [ ] `go mod tidy` applied
+- [ ] No unused imports or variables

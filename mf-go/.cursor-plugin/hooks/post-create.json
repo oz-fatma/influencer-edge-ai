@@ -1,0 +1,18 @@
+{
+  "name": "post-create",
+  "displayName": "Post-Create Verification",
+  "description": "Run after creating new files: verify build and imports",
+  "trigger": "post-create",
+  "steps": [
+    {
+      "name": "imports",
+      "command": "goimports -w .",
+      "description": "Organize imports"
+    },
+    {
+      "name": "build",
+      "command": "go build ./cmd/server",
+      "description": "Verify compilation after changes"
+    }
+  ]
+}

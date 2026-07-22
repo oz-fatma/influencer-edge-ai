@@ -1,0 +1,36 @@
+{
+  "name": "masterfabric-go-backend",
+  "displayName": "MasterFabric Go Backend",
+  "version": "1.0.0",
+  "description": "Go backend architecture plugin for MasterFabric: Clean Architecture, DDD, Dynamic CRUD Gateway, multi-tenancy, RBAC, event-driven patterns, and project conventions",
+  "author": {
+    "name": "MasterFabric Bilişim Teknolojileri A.Ş. & Gürkan Fikret Günak",
+    "email": "gurkanfikretgunak@masterfabric.co",
+    "url": "https://masterfabric.co",
+    "github": "https://github.com/gurkanfikretgunak"
+  },
+  "keywords": [
+    "go",
+    "golang",
+    "clean-architecture",
+    "ddd",
+    "masterfabric",
+    "api-gateway",
+    "multi-tenant",
+    "rbac",
+    "kafka",
+    "postgresql",
+    "dynamic-crud",
+    "mcp"
+  ],
+  "repository": "https://github.com/gurkanfikretgunak/masterfabric_go",
+  "homepage": "https://github.com/gurkanfikretgunak/masterfabric_go",
+  "license": "AGPL-3.0",
+  "rules": ".cursor/rules",
+  "agents": ".cursor/agents",
+  "skills": ".cursor/skills",
+  "commands": ".cursor-plugin/commands",
+  "hooks": ".cursor-plugin/hooks",
+  "mcp": ".cursor/mcp.json",
+  "logo": ".cursor-plugin/assets/logo.svg"
+}

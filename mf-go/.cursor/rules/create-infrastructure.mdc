@@ -1,0 +1,119 @@
+---
+description: Infrastructure integration patterns - PostgreSQL, Redis, Kafka implementations
+alwaysApply: false
+globs: ["**/infrastructure/**/*.go", "**/postgres/**/*.go", "**/redis/**/*.go", "**/kafka/**/*.go"]
+---
+
+# Create Infrastructure Rule
+
+Use when adding PostgreSQL repositories, Redis caching, or Kafka event publishing. Equivalent of "platform-channels" in Flutter.
+
+## PostgreSQL Repository
+
+```go
+package mycontext
+
+type MyRepo struct {
+    db *pgxpool.Pool
+}
+
+func NewMyRepo(db *pgxpool.Pool) *MyRepo {
+    return &MyRepo{db: db}
+}
+
+func (r *MyRepo) Create(ctx context.Context, entity *model.Entity) error {
+    if entity.ID == uuid.Nil {
+        entity.ID = uuid.New()
+    }
+    now := time.Now().UTC()
+    entity.CreatedAt = now
+    entity.UpdatedAt = now
+
+    _, err := r.db.Exec(ctx,
+        `INSERT INTO entities (id, organization_id, app_id, name, status, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        entity.ID, entity.OrganizationID, entity.AppID, entity.Name,
+        entity.Status, entity.CreatedAt, entity.UpdatedAt,
+    )
+    if err != nil {
+        return domainErr.New(domainErr.ErrInternal, "failed to create entity", err)
+    }
+    return nil
+}
+
+func (r *MyRepo) GetByID(ctx context.Context, id uuid.UUID) (*model.Entity, error) {
+    var e model.Entity
+    err := r.db.QueryRow(ctx,
+        `SELECT id, organization_id, app_id, name, status, created_at, updated_at
+         FROM entities WHERE id=$1`, id,
+    ).Scan(&e.ID, &e.OrganizationID, &e.AppID, &e.Name, &e.Status, &e.CreatedAt, &e.UpdatedAt)
+    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) {
+            return nil, domainErr.New(domainErr.ErrNotFound, "entity not found", nil)
+        }
+        return nil, domainErr.New(domainErr.ErrInternal, "failed to get entity", err)
+    }
+    return &e, nil
+}
+```
+
+## Database Migration
+
+File: `internal/infrastructure/postgres/migrations/NNNNN_create_entities.sql`
+
+```sql
+-- +goose Up
+CREATE TABLE IF NOT EXISTS entities (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES organizations(id),
+    app_id          UUID NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+    name            VARCHAR(255) NOT NULL,
+    status          VARCHAR(50) NOT NULL DEFAULT 'active',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_entities_app_id ON entities(app_id);
+CREATE INDEX idx_entities_org_id ON entities(organization_id);
+
+-- +goose Down
+DROP TABLE IF EXISTS entities;
+```
+
+## Kafka Event Publishing
+
+```go
+_ = uc.eventBus.Publish(ctx, events.TopicAPIManagement, myEvent{
+    EntityID:  entity.ID,
+    AppID:     entity.AppID,
+    Timestamp: time.Now().UTC(),
+})
+```
+
+## Redis Caching
+
+```go
+// Rate limiting pattern
+key := fmt.Sprintf("rate:%s:%s:%s", orgID, appID, endpointID)
+count, err := redisClient.Incr(ctx, key).Result()
+if count == 1 {
+    redisClient.Expire(ctx, key, time.Minute)
+}
+```
+
+## Rules
+
+- Always include `organization_id` and `app_id` in tables
+- Use `pgxpool.Pool` (not single connections)
+- Handle `pgx.ErrNoRows` explicitly
+- Use parameterized queries (`$1`, `$2`) - never string concatenation
+- Add indexes for foreign keys and frequently queried columns
+
+## Checklist
+
+- [ ] Repository implements domain interface
+- [ ] Multi-tenant columns included
+- [ ] Migration has both Up and Down
+- [ ] Indexes on foreign keys
+- [ ] Error wrapping with `domainErr.New()`
+- [ ] `pgx.ErrNoRows` handled for GetByID
