@@ -27,7 +27,15 @@ type redisPinger interface {
 
 // NewHandler creates a new health handler.
 func NewHandler(db *pgxpool.Pool, redis *redis.Client) *Handler {
-	return &Handler{db: db, redis: redis}
+	var dbP dbPinger
+	if db != nil {
+		dbP = db
+	}
+	var redisP redisPinger
+	if redis != nil {
+		redisP = redis
+	}
+	return &Handler{db: dbP, redis: redisP}
 }
 
 // HealthResponse is the JSON structure for health checks.
