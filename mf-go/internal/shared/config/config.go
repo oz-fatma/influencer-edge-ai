@@ -104,7 +104,7 @@ func Load() *Config {
 	return &Config{
 		Server: ServerConfig{
 			Host:               envOrDefault("SERVER_HOST", "0.0.0.0"),
-			Port:               envOrDefaultInt("SERVER_PORT", 8080),
+			Port:               serverPort(),
 			ReadTimeout:        time.Duration(envOrDefaultInt("SERVER_READ_TIMEOUT_SECONDS", 15)) * time.Second,
 			WriteTimeout:       time.Duration(envOrDefaultInt("SERVER_WRITE_TIMEOUT_SECONDS", 15)) * time.Second,
 			IdleTimeout:        time.Duration(envOrDefaultInt("SERVER_IDLE_TIMEOUT_SECONDS", 60)) * time.Second,
@@ -202,4 +202,14 @@ func envOrDefaultSlice(key string, defaultVal []string) []string {
 		}
 	}
 	return defaultVal
+}
+
+// serverPort prefers Render/Heroku-style PORT, then SERVER_PORT, then 8080.
+func serverPort() int {
+	if port := os.Getenv("PORT"); port != "" {
+		if intVal, err := strconv.Atoi(port); err == nil {
+			return intVal
+		}
+	}
+	return envOrDefaultInt("SERVER_PORT", 8080)
 }

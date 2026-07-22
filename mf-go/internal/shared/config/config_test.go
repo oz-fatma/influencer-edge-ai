@@ -9,7 +9,7 @@ import (
 
 func TestLoad_Defaults(t *testing.T) {
 	for _, key := range []string{
-		"SERVER_PORT", "DB_PORT", "REDIS_PORT", "LOG_FORMAT", "DB_HOST", "REDIS_HOST",
+		"PORT", "SERVER_PORT", "DB_PORT", "REDIS_PORT", "LOG_FORMAT", "DB_HOST", "REDIS_HOST",
 	} {
 		t.Setenv(key, "")
 	}
@@ -36,6 +36,14 @@ func TestLoad_EnvironmentOverrides(t *testing.T) {
 	cfg := Load()
 	assert.Equal(t, 9090, cfg.Server.Port)
 	assert.Equal(t, "db.example.com", cfg.Database.Host)
+}
+
+func TestLoad_PORTOverridesServerPort(t *testing.T) {
+	t.Setenv("PORT", "10000")
+	t.Setenv("SERVER_PORT", "8081")
+
+	cfg := Load()
+	assert.Equal(t, 10000, cfg.Server.Port)
 }
 
 func TestLoad_DBPoolInt32Bounds(t *testing.T) {
