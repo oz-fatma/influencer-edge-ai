@@ -223,8 +223,8 @@ func buildDependencies(
 	}
 
 	// --- Repositories ---
-	userRepo := pgIam.NewUserRepo(db)
-	requestLogRepo := pgObservability.NewRequestLogRepository(db)
+	userRepo := pgIam.NewUserRepo(db, cfg.Database.Schema)
+	requestLogRepo := pgObservability.NewRequestLogRepository(db, cfg.Database.Schema)
 	deps.RequestLogWriter = requestLogRepo
 	roleRepo := pgIam.NewRoleRepo(db)
 	orgRepo := pgTenant.NewOrgRepo(db)

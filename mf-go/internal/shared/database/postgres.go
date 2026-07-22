@@ -3,14 +3,11 @@ package database
 import (
 	"context"
 	"fmt"
-	"regexp"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/masterfabric-go/masterfabric/internal/shared/config"
 )
-
-var postgresSchemaName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // NewPostgresPool creates a new PostgreSQL connection pool.
 func NewPostgresPool(ctx context.Context, cfg config.DatabaseConfig) (*pgxpool.Pool, error) {
