@@ -11,7 +11,7 @@ function isProtected(pathname: string) {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get("access_token")?.value;
+  const token = request.cookies.get("token")?.value;
 
   if (isProtected(pathname) && !token) {
     const loginUrl = new URL("/login", request.url);

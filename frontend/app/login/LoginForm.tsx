@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { setAuth } from "@/lib/auth";
-import { ApiError, authApi } from "@/lib/api";
+import { ApiError, authApi, toAuthUser } from "@/lib/api";
 
 type Mode = "login" | "register";
 
@@ -22,14 +22,16 @@ export default function LoginForm() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   function validate(): string | null {
     if (!email.trim()) return "Email is required";
     if (!password) return "Password is required";
-    if (mode === "register" && !name.trim()) return "Full name is required";
+    if (mode === "register" && !firstName.trim()) return "First name is required";
+    if (mode === "register" && !lastName.trim()) return "Last name is required";
     if (password.length < 8) return "Password must be at least 8 characters";
     return null;
   }
@@ -52,18 +54,16 @@ export default function LoginForm() {
         password,
       };
 
-      const response =
-        mode === "login"
-          ? await authApi.login(payload)
-          : await authApi.register({ ...payload, name: name.trim() });
+      if (mode === "register") {
+        await authApi.register({
+          ...payload,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+        });
+      }
 
-      setAuth(
-        response.tokens.access_token,
-        response.tokens.refresh_token,
-        response.user,
-        response.tokens.expires_in,
-      );
-
+      const response = await authApi.login(payload);
+      setAuth(response.token, toAuthUser(response.user));
       router.push(redirect);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -112,18 +112,33 @@ export default function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
-              <div>
-                <label htmlFor="name" className="mb-1.5 block text-sm font-medium">
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30"
-                  placeholder="Your full name"
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="first_name" className="mb-1.5 block text-sm font-medium">
+                    First Name
+                  </label>
+                  <input
+                    id="first_name"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30"
+                    placeholder="Jane"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="last_name" className="mb-1.5 block text-sm font-medium">
+                    Last Name
+                  </label>
+                  <input
+                    id="last_name"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30"
+                    placeholder="Doe"
+                  />
+                </div>
               </div>
             )}
 

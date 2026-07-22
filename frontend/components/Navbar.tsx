@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { clearAuth, getRefreshToken } from "@/lib/auth";
-import { authApi } from "@/lib/api";
+import { clearAuth } from "@/lib/auth";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -21,15 +20,10 @@ export default function Navbar() {
   async function handleLogout() {
     setLoggingOut(true);
     try {
-      const refreshToken = getRefreshToken();
-      if (refreshToken) {
-        await authApi.logout(refreshToken);
-      }
-    } catch {
-      // Close session locally even if the server request fails
-    } finally {
       clearAuth();
       router.push("/login");
+    } finally {
+      setLoggingOut(false);
     }
   }
 

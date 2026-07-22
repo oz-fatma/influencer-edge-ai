@@ -4,7 +4,7 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self' http://localhost:8080 https://influencer-edge-ai.onrender.com https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co https://raw.githubusercontent.com https://cas-bridge.xethub.hf.co",
+  "connect-src 'self' http://localhost:8080 http://localhost:8081 https://influencer-edge-ai.onrender.com https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.huggingface.co https://raw.githubusercontent.com https://cas-bridge.xethub.hf.co",
   "worker-src 'self' blob:",
 ].join("; ");
 

@@ -34,7 +34,7 @@ function parseStoredInsights(insights: string): string[] {
 export default function MatchingPage() {
   const [scores, setScores] = useState<InfluencerScore[]>([]);
   const [analyses, setAnalyses] = useState<InfluencerAnalysis[]>([]);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -152,7 +152,7 @@ export default function MatchingPage() {
     }
   }
 
-  function handleSelect(id: number) {
+  function handleSelect(id: string) {
     setSelectedId(id);
     setLiveResult(null);
     setAnalysisError(null);

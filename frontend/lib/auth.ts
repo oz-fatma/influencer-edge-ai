@@ -1,11 +1,11 @@
-const TOKEN_KEY = "access_token";
-const REFRESH_TOKEN_KEY = "refresh_token";
+const TOKEN_KEY = "token";
 const USER_KEY = "user";
 
 export type AuthUser = {
-  id: number;
+  id: string;
   email: string;
-  name: string;
+  first_name: string;
+  last_name: string;
 };
 
 function setCookie(name: string, value: string, maxAgeSeconds: number) {
@@ -16,37 +16,36 @@ function clearCookie(name: string) {
   document.cookie = `${name}=; path=/; max-age=0`;
 }
 
-export function setAuth(
-  accessToken: string,
-  refreshToken: string,
-  user: AuthUser,
-  expiresInSeconds?: number,
-) {
-  localStorage.setItem(TOKEN_KEY, accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+export function getUserDisplayName(user: AuthUser | null): string {
+  if (!user) return "";
+  return `${user.first_name} ${user.last_name}`.trim();
+}
 
-  const accessMaxAge = expiresInSeconds ?? 60 * 15;
-  setCookie(TOKEN_KEY, accessToken, accessMaxAge);
-  setCookie(REFRESH_TOKEN_KEY, refreshToken, 60 * 60 * 24 * 7);
+export function setAuth(token: string, user: AuthUser) {
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  // Clear legacy keys from the old backend contract
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+  clearCookie("access_token");
+  clearCookie("refresh_token");
+
+  setCookie(TOKEN_KEY, token, 60 * 60 * 24);
 }
 
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
   clearCookie(TOKEN_KEY);
-  clearCookie(REFRESH_TOKEN_KEY);
+  clearCookie("access_token");
+  clearCookie("refresh_token");
 }
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(TOKEN_KEY);
-}
-
-export function getRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
 export function getUser(): AuthUser | null {

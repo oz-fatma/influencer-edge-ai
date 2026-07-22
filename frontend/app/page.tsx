@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 
 export default async function Home() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
+  const token = cookieStore.get("token")?.value;
 
   redirect(token ? "/dashboard" : "/login");
 }

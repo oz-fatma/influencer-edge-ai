@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getUser, type AuthUser } from "@/lib/auth";
+import { getUser, getUserDisplayName, type AuthUser } from "@/lib/auth";
 import {
   handleUnauthorizedRedirect,
   isUnauthorized,
@@ -40,11 +40,13 @@ export default function DashboardPage() {
 
   const highFit = scores.filter((s) => s.overall_score >= 85).length;
 
+  const displayName = getUserDisplayName(user);
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          Welcome{user?.name ? `, ${user.name}` : ""} 👋
+          Welcome{displayName ? `, ${displayName}` : ""} 👋
         </h1>
         <p className="mt-1 text-[var(--muted)]">
           Overview of your InfluencerEdge AI dashboard
