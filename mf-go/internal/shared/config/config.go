@@ -66,6 +66,7 @@ func (d DatabaseConfig) DSN() string {
 
 // RedisConfig holds Redis connection settings.
 type RedisConfig struct {
+	URL      string // Render/Heroku REDIS_URL (preferred when set)
 	Host     string
 	Port     int
 	Password string
@@ -111,22 +112,8 @@ func Load() *Config {
 			CORSAllowedOrigins: envOrDefaultSlice("CORS_ALLOWED_ORIGINS", nil),
 			MaxBodyBytes:       envOrDefaultInt64("MAX_BODY_BYTES", 1<<20),
 		},
-		Database: DatabaseConfig{
-			Host:     envOrDefault("DB_HOST", "localhost"),
-			Port:     envOrDefaultInt("DB_PORT", 5432),
-			User:     envOrDefault("DB_USER", "masterfabric"),
-			Password: envOrDefault("DB_PASSWORD", "masterfabric"),
-			DBName:   envOrDefault("DB_NAME", "masterfabric"),
-			SSLMode:  envOrDefault("DB_SSLMODE", "disable"),
-			MaxConns: envOrDefaultInt32("DB_MAX_CONNS", 25),
-			MinConns: envOrDefaultInt32("DB_MIN_CONNS", 5),
-		},
-		Redis: RedisConfig{
-			Host:     envOrDefault("REDIS_HOST", "localhost"),
-			Port:     envOrDefaultInt("REDIS_PORT", 6379),
-			Password: envOrDefault("REDIS_PASSWORD", ""),
-			DB:       envOrDefaultInt("REDIS_DB", 0),
-		},
+		Database: loadDatabaseConfig(),
+		Redis: loadRedisConfig(),
 		JWT: JWTConfig{
 			Secret:          envOrDefault("JWT_SECRET", "change-me-in-production"),
 			ExpirationHours: envOrDefaultInt("JWT_EXPIRATION_HOURS", 24),
@@ -202,6 +189,139 @@ func envOrDefaultSlice(key string, defaultVal []string) []string {
 		}
 	}
 	return defaultVal
+}
+
+// loadDatabaseConfig reads DB settings from DATABASE_URL (Render/Heroku) or DB_* vars.
+// Individual DB_* vars override parsed DATABASE_URL values when set.
+func loadDatabaseConfig() DatabaseConfig {
+	cfg := DatabaseConfig{
+		Host:     envOrDefault("DB_HOST", "localhost"),
+		Port:     envOrDefaultInt("DB_PORT", 5432),
+		User:     envOrDefault("DB_USER", "masterfabric"),
+		Password: envOrDefault("DB_PASSWORD", "masterfabric"),
+		DBName:   envOrDefault("DB_NAME", "masterfabric"),
+		SSLMode:  envOrDefault("DB_SSLMODE", "disable"),
+		MaxConns: envOrDefaultInt32("DB_MAX_CONNS", 25),
+		MinConns: envOrDefaultInt32("DB_MIN_CONNS", 5),
+	}
+
+	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
+		if parsed, err := parseDatabaseURL(dsn); err == nil {
+			cfg = parsed
+		}
+	}
+
+	if v := os.Getenv("DB_HOST"); v != "" {
+		cfg.Host = v
+	}
+	if v := os.Getenv("DB_PORT"); v != "" {
+		if port, err := strconv.Atoi(v); err == nil {
+			cfg.Port = port
+		}
+	}
+	if v := os.Getenv("DB_USER"); v != "" {
+		cfg.User = v
+	}
+	if v := os.Getenv("DB_PASSWORD"); v != "" {
+		cfg.Password = v
+	}
+	if v := os.Getenv("DB_NAME"); v != "" {
+		cfg.DBName = v
+	}
+	if v := os.Getenv("DB_SSLMODE"); v != "" {
+		cfg.SSLMode = v
+	}
+	if v := os.Getenv("DB_MAX_CONNS"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 32); err == nil {
+			cfg.MaxConns = int32(n)
+		}
+	}
+	if v := os.Getenv("DB_MIN_CONNS"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 32); err == nil {
+			cfg.MinConns = int32(n)
+		}
+	}
+
+	return cfg
+}
+
+func parseDatabaseURL(raw string) (DatabaseConfig, error) {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return DatabaseConfig{}, err
+	}
+
+	if u.Scheme != "postgres" && u.Scheme != "postgresql" {
+		return DatabaseConfig{}, fmt.Errorf("unsupported database scheme: %s", u.Scheme)
+	}
+
+	cfg := DatabaseConfig{
+		SSLMode:  "require",
+		MaxConns: 25,
+		MinConns: 5,
+	}
+
+	if u.User != nil {
+		cfg.User = u.User.Username()
+		if password, ok := u.User.Password(); ok {
+			cfg.Password = password
+		}
+	}
+
+	if u.Hostname() != "" {
+		cfg.Host = u.Hostname()
+	}
+	if port := u.Port(); port != "" {
+		if parsedPort, err := strconv.Atoi(port); err == nil {
+			cfg.Port = parsedPort
+		}
+	} else {
+		cfg.Port = 5432
+	}
+
+	dbName := strings.TrimPrefix(u.Path, "/")
+	if dbName != "" {
+		cfg.DBName = dbName
+	}
+
+	if sslMode := u.Query().Get("sslmode"); sslMode != "" {
+		cfg.SSLMode = sslMode
+	}
+
+	return cfg, nil
+}
+
+// loadRedisConfig reads Redis settings from REDIS_URL (Render Key Value) or REDIS_* vars.
+func loadRedisConfig() RedisConfig {
+	cfg := RedisConfig{
+		Host:     envOrDefault("REDIS_HOST", "localhost"),
+		Port:     envOrDefaultInt("REDIS_PORT", 6379),
+		Password: envOrDefault("REDIS_PASSWORD", ""),
+		DB:       envOrDefaultInt("REDIS_DB", 0),
+	}
+
+	if raw := os.Getenv("REDIS_URL"); raw != "" {
+		cfg.URL = raw
+	}
+
+	if v := os.Getenv("REDIS_HOST"); v != "" {
+		cfg.Host = v
+	}
+	if v := os.Getenv("REDIS_PORT"); v != "" {
+		if port, err := strconv.Atoi(v); err == nil {
+			cfg.Port = port
+		}
+	}
+	if v := os.Getenv("REDIS_PASSWORD"); v != "" {
+		cfg.Password = v
+	}
+	if v := os.Getenv("REDIS_DB"); v != "" {
+		if db, err := strconv.Atoi(v); err == nil {
+			cfg.DB = db
+		}
+	}
+
+	return cfg
 }
 
 // serverPort prefers Render/Heroku-style PORT, then SERVER_PORT, then 8080.

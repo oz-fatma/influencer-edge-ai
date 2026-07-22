@@ -89,3 +89,39 @@ func TestRedisConfig_Addr(t *testing.T) {
 	cfg := RedisConfig{Host: "redis.local", Port: 6380}
 	assert.Equal(t, "redis.local:6380", cfg.Addr())
 }
+
+func TestLoad_DATABASE_URL(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://edge_user:secret@dpg-example.frankfurt-postgres.render.com:5432/influencer_edge_db?sslmode=require")
+	t.Setenv("DB_HOST", "")
+	t.Setenv("DB_PORT", "")
+	t.Setenv("DB_USER", "")
+	t.Setenv("DB_PASSWORD", "")
+	t.Setenv("DB_NAME", "")
+	t.Setenv("DB_SSLMODE", "")
+
+	cfg := Load()
+
+	assert.Equal(t, "dpg-example.frankfurt-postgres.render.com", cfg.Database.Host)
+	assert.Equal(t, 5432, cfg.Database.Port)
+	assert.Equal(t, "edge_user", cfg.Database.User)
+	assert.Equal(t, "secret", cfg.Database.Password)
+	assert.Equal(t, "influencer_edge_db", cfg.Database.DBName)
+	assert.Equal(t, "require", cfg.Database.SSLMode)
+}
+
+func TestLoad_DATABASE_URL_DB_NAMEOverride(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://edge_user:secret@localhost:5432/other_db?sslmode=require")
+	t.Setenv("DB_NAME", "influencer_edge_db")
+
+	cfg := Load()
+	assert.Equal(t, "influencer_edge_db", cfg.Database.DBName)
+}
+
+func TestLoad_REDIS_URL(t *testing.T) {
+	t.Setenv("REDIS_URL", "redis://red-abc123:6379")
+	t.Setenv("REDIS_HOST", "")
+	t.Setenv("REDIS_PORT", "")
+
+	cfg := Load()
+	assert.Equal(t, "redis://red-abc123:6379", cfg.Redis.URL)
+}
