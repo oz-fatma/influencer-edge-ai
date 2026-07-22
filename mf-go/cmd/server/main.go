@@ -97,6 +97,12 @@ func run() error {
 	} else {
 		defer db.Close()
 		log.Info("connected to postgres", "schema", cfg.Database.Schema)
+		if cfg.Database.Schema != "" {
+			var searchPath string
+			if err := db.QueryRow(ctx, "SHOW search_path").Scan(&searchPath); err == nil {
+				log.Info("postgres search_path", "value", searchPath)
+			}
+		}
 	}
 
 	// Initialize Redis

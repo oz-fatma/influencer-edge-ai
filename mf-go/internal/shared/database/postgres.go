@@ -27,8 +27,13 @@ func NewPostgresPool(ctx context.Context, cfg config.DatabaseConfig) (*pgxpool.P
 			return nil, fmt.Errorf("invalid db schema name: %q", cfg.Schema)
 		}
 		schema := cfg.Schema
+		searchPath := schema + ",public"
+		if poolCfg.ConnConfig.RuntimeParams == nil {
+			poolCfg.ConnConfig.RuntimeParams = make(map[string]string)
+		}
+		poolCfg.ConnConfig.RuntimeParams["search_path"] = searchPath
 		poolCfg.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
-			_, err := conn.Exec(ctx, "SET search_path TO "+schema+", public")
+			_, err := conn.Exec(ctx, "SET search_path TO "+searchPath)
 			return err
 		}
 	}
