@@ -14,6 +14,8 @@ import { scoreColor } from "@/lib/score-utils";
 import {
   analyzeInfluencer,
   getWebLLMErrorMessage,
+  isWebLLMLoading,
+  isWebLLMReady,
   normalizeInsights,
   WEBLLM_MODEL_ID,
   type InfluencerAnalysisResult,
@@ -39,6 +41,7 @@ export default function MatchingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [analyzing, setAnalyzing] = useState(false);
+  const [engineBusy, setEngineBusy] = useState(false);
   const [modelProgress, setModelProgress] = useState<number | null>(null);
   const [modelProgressText, setModelProgressText] = useState("");
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -102,14 +105,27 @@ export default function MatchingPage() {
     }
   }
 
+  useEffect(() => {
+    const syncEngineBusy = () => setEngineBusy(isWebLLMLoading());
+    syncEngineBusy();
+    const id = window.setInterval(syncEngineBusy, 300);
+    return () => window.clearInterval(id);
+  }, []);
+
   async function handleAnalyze() {
     if (!selected || analyzing) return;
 
     setAnalyzing(true);
     setAnalysisError(null);
     setLiveResult(null);
-    setModelProgress(0);
-    setModelProgressText("Preparing model...");
+
+    const modelAlreadyReady = isWebLLMReady();
+    if (!modelAlreadyReady) {
+      setModelProgress(0);
+      setModelProgressText("Preparing model...");
+    } else {
+      setModelProgress(null);
+    }
 
     const startTime = performance.now();
 
@@ -121,8 +137,11 @@ export default function MatchingPage() {
           notes: selected.notes,
         },
         (report) => {
-          setModelProgress(Math.round(report.progress * 100));
-          setModelProgressText(report.text);
+          setEngineBusy(isWebLLMLoading());
+          if (!isWebLLMReady() || report.progress < 1) {
+            setModelProgress(Math.round(report.progress * 100));
+            setModelProgressText(report.text);
+          }
         },
       );
 
@@ -149,6 +168,7 @@ export default function MatchingPage() {
       setModelProgress(null);
     } finally {
       setAnalyzing(false);
+      setEngineBusy(isWebLLMLoading());
     }
   }
 
@@ -253,10 +273,16 @@ export default function MatchingPage() {
                   </div>
                   <button
                     onClick={handleAnalyze}
-                    disabled={analyzing}
+                    disabled={analyzing || engineBusy}
                     className="rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    {analyzing ? "Analyzing..." : "Analyze"}
+                    {analyzing
+                      ? engineBusy && !isWebLLMReady()
+                        ? "Loading model..."
+                        : "Analyzing..."
+                      : engineBusy
+                        ? "Loading model..."
+                        : "Analyze"}
                   </button>
                 </div>
 

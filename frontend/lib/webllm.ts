@@ -73,6 +73,42 @@ export type AnalyzeInfluencerOutput = {
 
 let engineInstance: MLCEngine | null = null;
 let engineInitPromise: Promise<MLCEngine> | null = null;
+let engineLoading = false;
+
+type CreateEngineFn = (
+  modelId: string,
+  opts: { initProgressCallback?: InitProgressCallback },
+) => Promise<MLCEngine>;
+
+let createEngineOverride: CreateEngineFn | null = null;
+
+const progressListeners = new Set<InitProgressCallback>();
+
+const READY_PROGRESS = { progress: 1, text: "Model ready", timeElapsed: 0 };
+
+function emitProgress(report: Parameters<InitProgressCallback>[0]) {
+  progressListeners.forEach((listener) => listener(report));
+}
+
+function subscribeProgress(onProgress?: InitProgressCallback): () => void {
+  if (!onProgress) {
+    return () => {};
+  }
+  progressListeners.add(onProgress);
+  return () => {
+    progressListeners.delete(onProgress);
+  };
+}
+
+/** True while the model weights are being downloaded/initialized. */
+export function isWebLLMLoading(): boolean {
+  return engineLoading;
+}
+
+/** True once CreateMLCEngine has completed successfully. */
+export function isWebLLMReady(): boolean {
+  return engineInstance !== null;
+}
 
 export async function isWebGPUAvailable(): Promise<boolean> {
   if (typeof navigator === "undefined") {
@@ -107,23 +143,45 @@ export async function initWebLLMEngine(
   }
 
   if (engineInstance) {
+    onProgress?.(READY_PROGRESS);
     return engineInstance;
   }
 
-  if (!engineInitPromise) {
-    engineInitPromise = (async () => {
-      const { CreateMLCEngine } = await import("@mlc-ai/web-llm");
-      const engine = await CreateMLCEngine(WEBLLM_MODEL_ID, {
-        initProgressCallback: (report) => {
-          onProgress?.(report);
-        },
-      });
-      engineInstance = engine;
-      return engine;
-    })();
+  const unsubscribe = subscribeProgress(onProgress);
+
+  if (engineInitPromise) {
+    try {
+      return await engineInitPromise;
+    } finally {
+      unsubscribe();
+    }
   }
 
-  return engineInitPromise;
+  engineLoading = true;
+  engineInitPromise = (async () => {
+    try {
+      const createEngine =
+        createEngineOverride ??
+        (await import("@mlc-ai/web-llm")).CreateMLCEngine;
+      const engine = await createEngine(WEBLLM_MODEL_ID, {
+        initProgressCallback: emitProgress,
+      });
+      engineInstance = engine;
+      emitProgress(READY_PROGRESS);
+      return engine;
+    } catch (error) {
+      engineInitPromise = null;
+      throw error;
+    } finally {
+      engineLoading = false;
+    }
+  })();
+
+  try {
+    return await engineInitPromise;
+  } finally {
+    unsubscribe();
+  }
 }
 
 function buildPrompt(input: InfluencerInput): string {
@@ -353,4 +411,18 @@ export function getWebLLMErrorMessage(error: unknown): string {
     return error.message;
   }
   return "An unknown error occurred.";
+}
+
+/** Test-only helper to reset module singleton state. */
+export function __resetWebLLMEngineForTests() {
+  engineInstance = null;
+  engineInitPromise = null;
+  engineLoading = false;
+  createEngineOverride = null;
+  progressListeners.clear();
+}
+
+/** Test-only helper to stub CreateMLCEngine. */
+export function __setCreateMLCEngineForTests(fn: CreateEngineFn | null) {
+  createEngineOverride = fn;
 }
