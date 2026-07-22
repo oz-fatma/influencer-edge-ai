@@ -3,10 +3,14 @@ package database
 import (
 	"context"
 	"fmt"
+	"regexp"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/masterfabric-go/masterfabric/internal/shared/config"
 )
+
+var postgresSchemaName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 // NewPostgresPool creates a new PostgreSQL connection pool.
 func NewPostgresPool(ctx context.Context, cfg config.DatabaseConfig) (*pgxpool.Pool, error) {
@@ -17,6 +21,17 @@ func NewPostgresPool(ctx context.Context, cfg config.DatabaseConfig) (*pgxpool.P
 
 	poolCfg.MaxConns = cfg.MaxConns
 	poolCfg.MinConns = cfg.MinConns
+
+	if cfg.Schema != "" {
+		if !postgresSchemaName.MatchString(cfg.Schema) {
+			return nil, fmt.Errorf("invalid db schema name: %q", cfg.Schema)
+		}
+		schema := cfg.Schema
+		poolCfg.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+			_, err := conn.Exec(ctx, "SET search_path TO "+schema+", public")
+			return err
+		}
+	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {

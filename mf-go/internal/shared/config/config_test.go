@@ -125,3 +125,10 @@ func TestLoad_REDIS_URL(t *testing.T) {
 	cfg := Load()
 	assert.Equal(t, "redis://red-abc123:6379", cfg.Redis.URL)
 }
+
+func TestLoad_DB_SCHEMA(t *testing.T) {
+	t.Setenv("DB_SCHEMA", "mf")
+
+	cfg := Load()
+	assert.Equal(t, "mf", cfg.Database.Schema)
+}

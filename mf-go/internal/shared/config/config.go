@@ -48,6 +48,9 @@ type DatabaseConfig struct {
 	Password string
 	DBName   string
 	SSLMode  string
+	// Schema is an optional PostgreSQL schema (e.g. "mf" on shared influencer_edge_db).
+	// When set, connections use search_path schema,public so legacy public.* tables stay untouched.
+	Schema   string
 	MaxConns int32
 	MinConns int32
 }
@@ -230,6 +233,9 @@ func loadDatabaseConfig() DatabaseConfig {
 	}
 	if v := os.Getenv("DB_SSLMODE"); v != "" {
 		cfg.SSLMode = v
+	}
+	if v := os.Getenv("DB_SCHEMA"); v != "" {
+		cfg.Schema = v
 	}
 	if v := os.Getenv("DB_MAX_CONNS"); v != "" {
 		if n, err := strconv.ParseInt(v, 10, 32); err == nil {

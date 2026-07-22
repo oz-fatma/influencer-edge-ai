@@ -109,35 +109,62 @@ The legacy backend owns these tables in `public`:
 
 - `users`, `refresh_tokens`, `influencer_scores`, `influencer_analyses`
 
-mf-go expects different schemas for some of the same table names (UUID ids vs legacy `uint` ids). **Do not run full mf-go migrations** against `influencer_edge_db` until schema strategy is decided.
+mf-go expects different schemas for some of the same table names (UUID ids vs legacy `uint` ids). **Do not run full mf-go migrations in `public`** on `influencer_edge_db`.
 
-Safe to run now (no conflict):
+**Recommended:** put mf-go tables in PostgreSQL schema **`mf`** and set on Render:
+
+| Key | Value |
+|---|---|
+| `DB_SCHEMA` | `mf` |
+
+#### One-time migration (from your Mac)
+
+Render Dashboard → Postgres → **Connect** → copy **External Database URL**, then:
 
 ```bash
-# Only adds request_logs for Grafana observability
+cd mf-go
+export DATABASE_URL='postgres://USER:PASS@HOST/influencer_edge_db?sslmode=require'
+export DB_SCHEMA=mf
+chmod +x scripts/migrate_render_schema.sh
+./scripts/migrate_render_schema.sh
+```
+
+Then on **influencer-edge-mfgo** Render service → Environment:
+
+| Key | Value |
+|---|---|
+| `DB_SCHEMA` | `mf` |
+| `CORS_ALLOWED_ORIGINS` | `https://influencer-edge-ai.vercel.app` |
+
+Save → **Manual Deploy**.
+
+Safe to run in `public` only (optional observability):
+
+```bash
 psql "$DATABASE_URL" -f mf-go/internal/infrastructure/postgres/migrations/00014_create_request_logs.sql
 ```
 
-Or via goose targeting only that file.
+Or skip — `request_logs` is also created inside `mf` when you run the full schema migration.
 
 ### 3. What works today on shared DB
 
-| Feature | Shared `influencer_edge_db` |
+| Feature | Shared `influencer_edge_db` + `DB_SCHEMA=mf` |
 |---|---|
-| Classic backend | Works — unchanged |
+| Classic backend | Works — unchanged in `public.*` |
 | mf-go `/health/ready` | Works after DB env is set |
-| mf-go request logging / Grafana | Works after `request_logs` migration |
-| mf-go auth + influencer API | Needs mf-go tables — use separate schema or complete migration plan first |
+| mf-go auth (register/login) | Works after `migrate_render_schema.sh` + `DB_SCHEMA=mf` |
+| mf-go influencer API | Works after schema migration |
+| mf-go request logging / Grafana | Works (`mf.request_logs` or public migration) |
 
 ### 4. Next step for full mf-go on same DB
 
 Pick one:
 
-1. **PostgreSQL schema `mf`** — mf-go tables live in `mf.*`, legacy stays in `public.*`
+1. **PostgreSQL schema `mf`** — ✅ recommended (see above)
 2. **Legacy-only data** — adapt mf-go to read/write legacy GORM table shapes
 3. **Cutover** — migrate users/scores to mf-go schema, retire classic backend writes
 
-Until then, keep classic backend on `influencer_edge_db` and point mf-go at the same DB for health checks and observability.
+Until `DB_SCHEMA=mf` is set and migrations are applied, keep classic backend on `influencer_edge_db` for auth; mf-go health checks work but register returns 500.
 
 ## Render: Redis (Key Value)
 
