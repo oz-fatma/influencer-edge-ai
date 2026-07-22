@@ -70,6 +70,22 @@ func TestDatabaseConfig_DSN(t *testing.T) {
 	assert.Equal(t, expected, cfg.DSN())
 }
 
+func TestDatabaseConfig_DSN_WithSchema(t *testing.T) {
+	cfg := DatabaseConfig{
+		Host:     "localhost",
+		Port:     5432,
+		User:     "user",
+		Password: "pass",
+		DBName:   "testdb",
+		SSLMode:  "require",
+		Schema:   "mf",
+	}
+	dsn := cfg.DSN()
+	assert.Contains(t, dsn, "sslmode=require")
+	assert.Contains(t, dsn, "search_path")
+	assert.Contains(t, dsn, "mf")
+}
+
 func TestDatabaseConfig_DSN_EscapesSpecialCharacters(t *testing.T) {
 	cfg := DatabaseConfig{
 		Host:     "localhost",

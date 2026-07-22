@@ -63,7 +63,12 @@ func (d DatabaseConfig) DSN() string {
 		Host:   fmt.Sprintf("%s:%d", d.Host, d.Port),
 		Path:   "/" + d.DBName,
 	}
-	u.RawQuery = url.Values{"sslmode": {d.SSLMode}}.Encode()
+	q := url.Values{"sslmode": {d.SSLMode}}
+	if d.Schema != "" {
+		// Set search_path at connect time (more reliable than per-request SET on some hosts).
+		q.Set("options", "-c search_path="+d.Schema+",public")
+	}
+	u.RawQuery = q.Encode()
 	return u.String()
 }
 

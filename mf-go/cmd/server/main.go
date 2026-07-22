@@ -96,7 +96,7 @@ func run() error {
 		db = nil
 	} else {
 		defer db.Close()
-		log.Info("connected to postgres")
+		log.Info("connected to postgres", "schema", cfg.Database.Schema)
 	}
 
 	// Initialize Redis
