@@ -160,11 +160,15 @@ export async function initWebLLMEngine(
   engineLoading = true;
   engineInitPromise = (async () => {
     try {
-      const createEngine =
-        createEngineOverride ??
-        (await import("@mlc-ai/web-llm")).CreateMLCEngine;
+      const webllm = await import("@mlc-ai/web-llm");
+      const createEngine = createEngineOverride ?? webllm.CreateMLCEngine;
       const engine = await createEngine(WEBLLM_MODEL_ID, {
         initProgressCallback: emitProgress,
+        appConfig: {
+          ...webllm.prebuiltAppConfig,
+          // Cache API (Cache.add) often fails on large HF downloads; IndexedDB is more reliable.
+          cacheBackend: "indexeddb",
+        },
       });
       engineInstance = engine;
       emitProgress(READY_PROGRESS);
