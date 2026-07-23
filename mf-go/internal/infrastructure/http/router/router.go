@@ -247,6 +247,7 @@ func registerInfluencerRoutes(r chi.Router, h *influencerHandler.Handler) {
 		r.Get("/", h.ListAnalyses)
 	})
 	r.Get("/influencer-analysis/{id}", h.GetAnalysis)
+	r.Post("/llm/analyze", h.AnalyzeInfluencerLLM)
 	r.Post("/llm-metrics", h.RecordLLMMetric)
 	r.Get("/monitoring/stats", h.GetMonitoringStats)
 }

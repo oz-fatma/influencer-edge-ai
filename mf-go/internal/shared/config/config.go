@@ -18,6 +18,14 @@ type Config struct {
 	Kafka     KafkaConfig
 	WebSocket WebSocketConfig
 	Log       LogConfig
+	LLM       LLMConfig
+}
+
+// LLMConfig holds OpenAI-compatible MLC-LLM proxy settings.
+type LLMConfig struct {
+	BaseURL string
+	Model   string
+	Timeout time.Duration
 }
 
 // WebSocketConfig holds real-time WebSocket settings.
@@ -145,6 +153,15 @@ func Load() *Config {
 			Level:  envOrDefault("LOG_LEVEL", "info"),
 			Format: envOrDefault("LOG_FORMAT", "json"),
 		},
+		LLM: loadLLMConfig(),
+	}
+}
+
+func loadLLMConfig() LLMConfig {
+	return LLMConfig{
+		BaseURL: strings.TrimRight(envOrDefault("LLM_BASE_URL", ""), "/"),
+		Model:   envOrDefault("LLM_MODEL", "gemma-2b-it-q4f16_1-MLC"),
+		Timeout: time.Duration(envOrDefaultInt("LLM_TIMEOUT_SECONDS", 300)) * time.Second,
 	}
 }
 

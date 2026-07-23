@@ -5,21 +5,16 @@ import {
   analysesApi,
   handleUnauthorizedRedirect,
   isUnauthorized,
+  llmApi,
   monitoringApi,
   scoresApi,
+  SERVER_LLM_MODEL_ID,
   type InfluencerAnalysis,
+  type InfluencerAnalysisResult,
   type InfluencerScore,
 } from "@/lib/api";
 import { scoreColor } from "@/lib/score-utils";
-import {
-  analyzeInfluencer,
-  getWebLLMErrorMessage,
-  isWebLLMLoading,
-  isWebLLMReady,
-  normalizeInsights,
-  WEBLLM_MODEL_ID,
-  type InfluencerAnalysisResult,
-} from "@/lib/webllm";
+import { normalizeInsights } from "@/lib/webllm";
 
 function matchAnalysis(
   score: InfluencerScore,
@@ -33,6 +28,13 @@ function parseStoredInsights(insights: string): string[] {
   return normalizeInsights(insights);
 }
 
+function getAnalyzeErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "An unknown error occurred.";
+}
+
 export default function MatchingPage() {
   const [scores, setScores] = useState<InfluencerScore[]>([]);
   const [analyses, setAnalyses] = useState<InfluencerAnalysis[]>([]);
@@ -41,9 +43,6 @@ export default function MatchingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [analyzing, setAnalyzing] = useState(false);
-  const [engineBusy, setEngineBusy] = useState(false);
-  const [modelProgress, setModelProgress] = useState<number | null>(null);
-  const [modelProgressText, setModelProgressText] = useState("");
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [liveResult, setLiveResult] = useState<InfluencerAnalysisResult | null>(null);
 
@@ -98,19 +97,12 @@ export default function MatchingPage() {
         influencer_name: influencerName,
         latency_ms: latencyMs,
         status,
-        model: WEBLLM_MODEL_ID,
+        model: SERVER_LLM_MODEL_ID,
       });
     } catch {
       // Do not interrupt the analysis flow if metric recording fails
     }
   }
-
-  useEffect(() => {
-    const syncEngineBusy = () => setEngineBusy(isWebLLMLoading());
-    syncEngineBusy();
-    const id = window.setInterval(syncEngineBusy, 300);
-    return () => window.clearInterval(id);
-  }, []);
 
   async function handleAnalyze() {
     if (!selected || analyzing) return;
@@ -119,31 +111,14 @@ export default function MatchingPage() {
     setAnalysisError(null);
     setLiveResult(null);
 
-    const modelAlreadyReady = isWebLLMReady();
-    if (!modelAlreadyReady) {
-      setModelProgress(0);
-      setModelProgressText("Preparing model...");
-    } else {
-      setModelProgress(null);
-    }
-
     const startTime = performance.now();
 
     try {
-      const { result, rawOutput } = await analyzeInfluencer(
-        {
-          name: selected.influencer_name,
-          platform: selected.platform,
-          notes: selected.notes,
-        },
-        (report) => {
-          setEngineBusy(isWebLLMLoading());
-          if (!isWebLLMReady() || report.progress < 1) {
-            setModelProgress(Math.round(report.progress * 100));
-            setModelProgressText(report.text);
-          }
-        },
-      );
+      const { result, raw_output: rawOutput } = await llmApi.analyze({
+        influencer_name: selected.influencer_name,
+        platform: selected.platform,
+        notes: selected.notes,
+      });
 
       const latencyMs = Math.round(performance.now() - startTime);
       await recordMetric(selected.influencer_name, latencyMs, "success");
@@ -158,7 +133,7 @@ export default function MatchingPage() {
       const created = await analysesApi.create({
         influencer_name: selected.influencer_name,
         platform: selected.platform,
-        analysis_type: "web-llm",
+        analysis_type: "mlc-llm",
         summary: result.summary,
         insights: result.insights.join("\n"),
         raw_llm_output: rawOutput,
@@ -170,15 +145,12 @@ export default function MatchingPage() {
       );
       setAnalyses((prev) => [created.analysis, ...prev]);
       setLiveResult(result);
-      setModelProgress(null);
     } catch (err) {
       const latencyMs = Math.round(performance.now() - startTime);
       await recordMetric(selected.influencer_name, latencyMs, "error");
-      setAnalysisError(getWebLLMErrorMessage(err));
-      setModelProgress(null);
+      setAnalysisError(getAnalyzeErrorMessage(err));
     } finally {
       setAnalyzing(false);
-      setEngineBusy(isWebLLMLoading());
     }
   }
 
@@ -232,7 +204,7 @@ export default function MatchingPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">AI Matching Panel</h1>
         <p className="mt-1 text-[var(--muted)]">
-          Browser-based influencer analysis with WebLLM ({WEBLLM_MODEL_ID})
+          Server-side influencer analysis via MLC-LLM ({SERVER_LLM_MODEL_ID})
         </p>
       </div>
 
@@ -283,33 +255,12 @@ export default function MatchingPage() {
                   </div>
                   <button
                     onClick={handleAnalyze}
-                    disabled={analyzing || engineBusy}
+                    disabled={analyzing}
                     className="rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    {analyzing
-                      ? engineBusy && !isWebLLMReady()
-                        ? "Loading model..."
-                        : "Analyzing..."
-                      : engineBusy
-                        ? "Loading model..."
-                        : "Analyze"}
+                    {analyzing ? "Analyzing on server..." : "Analyze"}
                   </button>
                 </div>
-
-                {modelProgress !== null && (
-                  <div className="mt-5">
-                    <div className="mb-1.5 flex items-center justify-between text-xs text-[var(--muted)]">
-                      <span>{modelProgressText || "Loading model..."}</span>
-                      <span>{modelProgress}%</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-elevated)]">
-                      <div
-                        className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
-                        style={{ width: `${modelProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
 
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <ScorePill

@@ -53,6 +53,26 @@ type CreateAnalysisRequest struct {
 	ScoreID        *uuid.UUID `json:"score_id"`
 }
 
+type AnalyzeInfluencerRequest struct {
+	InfluencerName string `json:"influencer_name" validate:"required"`
+	Platform       string `json:"platform" validate:"required"`
+	Notes          string `json:"notes"`
+}
+
+type AnalyzeInfluencerResponse struct {
+	Result    AnalyzeInfluencerResult `json:"result"`
+	RawOutput string                  `json:"raw_output"`
+}
+
+type AnalyzeInfluencerResult struct {
+	OverallScore    float64  `json:"overall_score"`
+	EngagementScore float64  `json:"engagement_score"`
+	AudienceScore   float64  `json:"audience_score"`
+	BrandFitScore   float64  `json:"brand_fit_score"`
+	Summary         string   `json:"summary"`
+	Insights        []string `json:"insights"`
+}
+
 type RecordLLMMetricRequest struct {
 	InfluencerName string `json:"influencer_name" validate:"required"`
 	LatencyMs      int64  `json:"latency_ms" validate:"required"`

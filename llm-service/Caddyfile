@@ -1,0 +1,14 @@
+# Local demo reverse proxy — Caddy sits in front of MLC-LLM.
+# Tunnel connects here (:8080), not directly to MLC (:8000).
+#
+# Start: docker compose -f docker-compose.proxy.yml up -d
+# Verify: curl -I http://localhost:8080/v1/models
+#         (look for X-Reverse-Proxy: Caddy)
+
+:8080 {
+	# Visible in responses — useful when demoing "reverse proxy layer"
+	header X-Reverse-Proxy "Caddy"
+	header X-LLM-Upstream "host.docker.internal:8000"
+
+	reverse_proxy host.docker.internal:8000
+}

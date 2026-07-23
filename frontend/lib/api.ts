@@ -237,3 +237,29 @@ export const monitoringApi = {
       body: JSON.stringify(payload),
     }),
 };
+
+export const SERVER_LLM_MODEL_ID = "gemma-2b-it-q4f16_1-MLC";
+
+export type InfluencerAnalysisResult = {
+  overall_score: number;
+  engagement_score: number;
+  audience_score: number;
+  brand_fit_score: number;
+  summary: string;
+  insights: string[];
+};
+
+export const llmApi = {
+  analyze: (payload: {
+    influencer_name: string;
+    platform: string;
+    notes?: string;
+  }) =>
+    apiFetch<{ result: InfluencerAnalysisResult; raw_output: string }>(
+      "/api/v1/llm/analyze",
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
+};

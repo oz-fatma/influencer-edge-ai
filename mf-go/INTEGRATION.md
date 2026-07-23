@@ -51,7 +51,71 @@ Mirrors legacy `backend/` API under `/api/v1`:
 
 - `POST/GET /api/v1/scores`, `GET/PUT/DELETE /api/v1/scores/{id}`
 - `POST/GET /api/v1/analyses`, `GET /api/v1/influencer-analysis/{id}`
+- `POST /api/v1/llm/analyze` — server-side MLC-LLM proxy (requires `LLM_BASE_URL`)
 - `POST /api/v1/llm-metrics`, `GET /api/v1/monitoring/stats`
+
+## MLC-LLM proxy (Vercel Analyze → Render → your Mac)
+
+Traffic path (minimal):
+
+```text
+Vercel frontend → Render mf-go → Cloudflare tunnel → Mac Docker :8000 (MLC-LLM)
+```
+
+**Sunum / somut reverse proxy (Caddy katmanı):** see [`../llm-service/PROXY-DEMO.md`](../llm-service/PROXY-DEMO.md)
+
+```text
+Vercel → Render mf-go → Tunnel → Caddy :8080 → MLC :8000
+```
+
+Tunnel must point at **Caddy (`:8080`)**, not MLC directly, so responses include `X-Reverse-Proxy: Caddy`.
+
+### 1. Local MLC + Caddy + tunnel
+
+```bash
+docker start influencer-llm-service
+curl http://localhost:8000/v1/models
+
+cd llm-service
+docker compose -f docker-compose.proxy.yml up -d
+./demo-proxy.sh   # verifies Caddy header on :8080
+
+# Expose Caddy (not MLC) — keep this terminal open
+cloudflared tunnel --url http://127.0.0.1:8080
+```
+
+Copy the `https://*.trycloudflare.com` URL from the tunnel output.
+
+### 2. Render env (mf-go service)
+
+| Key | Value |
+|---|---|
+| `LLM_BASE_URL` | `https://your-tunnel.trycloudflare.com` |
+| `LLM_MODEL` | `gemma-2b-it-q4f16_1-MLC` (optional; default) |
+| `LLM_TIMEOUT_SECONDS` | `300` (CPU inference can be slow) |
+| `SERVER_WRITE_TIMEOUT_SECONDS` | `600` (must exceed LLM timeout) |
+
+Redeploy mf-go after setting env vars.
+
+### 3. Test the proxy
+
+```bash
+TOKEN=$(curl -s -X POST https://influencer-edge-mfgo.onrender.com/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","password":"password123"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+
+curl -X POST https://influencer-edge-mfgo.onrender.com/api/v1/llm/analyze \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"influencer_name":"Ada Lovelace","platform":"instagram","notes":"Tech & education niche"}'
+```
+
+### 4. Frontend
+
+The matching page calls `POST /api/v1/llm/analyze` instead of WebLLM in the browser.
+Ensure `NEXT_PUBLIC_API_URL` points at mf-go on Render.
+
+**Demo caveats:** Mac, Docker, and `cloudflared` must stay running. Tunnel URL changes on restart.
 
 ## Frontend switch (optional)
 

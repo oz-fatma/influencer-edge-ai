@@ -8,19 +8,26 @@ import (
 	"github.com/google/uuid"
 	"github.com/masterfabric-go/masterfabric/internal/application/influencer/dto"
 	"github.com/masterfabric-go/masterfabric/internal/application/influencer/usecase"
+	"github.com/masterfabric-go/masterfabric/internal/infrastructure/llm"
 	"github.com/masterfabric-go/masterfabric/internal/shared/middleware"
 	"github.com/masterfabric-go/masterfabric/internal/shared/response"
 	"github.com/masterfabric-go/masterfabric/internal/shared/validator"
 )
 
 type Handler struct {
-	scores      *usecase.ScoreService
-	analyses    *usecase.AnalysisService
-	monitoring  *usecase.MonitoringService
+	scores     *usecase.ScoreService
+	analyses   *usecase.AnalysisService
+	monitoring *usecase.MonitoringService
+	llm        *llm.Analyzer
 }
 
-func NewHandler(scores *usecase.ScoreService, analyses *usecase.AnalysisService, monitoring *usecase.MonitoringService) *Handler {
-	return &Handler{scores: scores, analyses: analyses, monitoring: monitoring}
+func NewHandler(
+	scores *usecase.ScoreService,
+	analyses *usecase.AnalysisService,
+	monitoring *usecase.MonitoringService,
+	llmAnalyzer *llm.Analyzer,
+) *Handler {
+	return &Handler{scores: scores, analyses: analyses, monitoring: monitoring, llm: llmAnalyzer}
 }
 
 func (h *Handler) CreateScore(w http.ResponseWriter, r *http.Request) {
@@ -167,6 +174,55 @@ func (h *Handler) GetAnalysis(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.JSON(w, http.StatusOK, map[string]any{"analysis": analysis})
+}
+
+func (h *Handler) AnalyzeInfluencerLLM(w http.ResponseWriter, r *http.Request) {
+	if _, ok := middleware.UserIDFromContext(r.Context()); !ok {
+		response.JSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+	if h.llm == nil {
+		response.JSON(w, http.StatusServiceUnavailable, map[string]string{
+			"error": "LLM service not configured (set LLM_BASE_URL on the server)",
+		})
+		return
+	}
+
+	var req dto.AnalyzeInfluencerRequest
+	if err := validator.DecodeAndValidate(r, &req); err != nil {
+		response.JSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	if err := dto.ValidateInfluencerName(req.InfluencerName); err != nil {
+		response.Error(w, err)
+		return
+	}
+	if err := dto.ValidatePlatform(req.Platform); err != nil {
+		response.Error(w, err)
+		return
+	}
+	if len(req.Notes) > dto.MaxNotesLen {
+		response.JSON(w, http.StatusBadRequest, map[string]string{"error": "notes must be at most 4096 characters"})
+		return
+	}
+
+	result, rawOutput, err := h.llm.Analyze(r.Context(), req.InfluencerName, req.Platform, req.Notes)
+	if err != nil {
+		response.JSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+
+	response.JSON(w, http.StatusOK, dto.AnalyzeInfluencerResponse{
+		Result: dto.AnalyzeInfluencerResult{
+			OverallScore:    result.OverallScore,
+			EngagementScore: result.EngagementScore,
+			AudienceScore:   result.AudienceScore,
+			BrandFitScore:   result.BrandFitScore,
+			Summary:         result.Summary,
+			Insights:        result.Insights,
+		},
+		RawOutput: rawOutput,
+	})
 }
 
 func (h *Handler) RecordLLMMetric(w http.ResponseWriter, r *http.Request) {

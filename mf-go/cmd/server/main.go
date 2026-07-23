@@ -22,6 +22,7 @@ import (
 	realtimeHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/realtime"
 	tenantHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/tenant"
 	"github.com/masterfabric-go/masterfabric/internal/infrastructure/http/router"
+	infraLLM "github.com/masterfabric-go/masterfabric/internal/infrastructure/llm"
 	infraKafka "github.com/masterfabric-go/masterfabric/internal/infrastructure/kafka"
 	infraRedis "github.com/masterfabric-go/masterfabric/internal/infrastructure/redis"
 	infraWS "github.com/masterfabric-go/masterfabric/internal/infrastructure/websocket"
@@ -308,10 +309,17 @@ func buildDependencies(
 	scoreRepo := pgInfluencer.NewScoreRepo(db)
 	analysisRepo := pgInfluencer.NewAnalysisRepo(db)
 	llmMetricsStore := infraRedis.NewLLMMetricsStore(redisClient)
+	llmAnalyzer := infraLLM.NewAnalyzer(cfg.LLM)
+	if llmAnalyzer != nil {
+		log.Info("LLM proxy enabled", "base_url", cfg.LLM.BaseURL, "model", cfg.LLM.Model)
+	} else {
+		log.Info("LLM proxy disabled", "hint", "set LLM_BASE_URL to enable /api/v1/llm/analyze")
+	}
 	deps.InfluencerHandler = influencerHandler.NewHandler(
 		influencerUC.NewScoreService(scoreRepo),
 		influencerUC.NewAnalysisService(analysisRepo, scoreRepo),
 		influencerUC.NewMonitoringService(llmMetricsStore),
+		llmAnalyzer,
 	)
 
 	// --- WebSocket real-time hub ---
