@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   analysesApi,
+  ApiError,
   handleUnauthorizedRedirect,
   isUnauthorized,
   llmApi,
@@ -14,7 +15,16 @@ import {
   type InfluencerScore,
 } from "@/lib/api";
 import { scoreColor } from "@/lib/score-utils";
-import { normalizeInsights } from "@/lib/webllm";
+import {
+  analyzeInfluencer,
+  getWebLLMErrorMessage,
+  isWebLLMLoading,
+  isWebLLMReady,
+  normalizeInsights,
+  WEBLLM_MODEL_ID,
+} from "@/lib/webllm";
+
+type AnalysisPhase = "idle" | "server" | "browser";
 
 function matchAnalysis(
   score: InfluencerScore,
@@ -28,11 +38,31 @@ function parseStoredInsights(insights: string): string[] {
   return normalizeInsights(insights);
 }
 
-function getAnalyzeErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
+function shouldFallbackToWebLLM(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    if (error.status === 401 || error.status === 403 || error.status === 400) {
+      return false;
+    }
+    if ([502, 503, 504, 524].includes(error.status)) {
+      return true;
+    }
+    const msg = error.message.toLowerCase();
+    return (
+      msg.includes("524") ||
+      msg.includes("llm") ||
+      msg.includes("timeout") ||
+      msg.includes("gateway") ||
+      msg.includes("not configured")
+    );
   }
-  return "An unknown error occurred.";
+  if (error instanceof TypeError) {
+    return true;
+  }
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    return msg.includes("fetch") || msg.includes("network") || msg.includes("timeout");
+  }
+  return false;
 }
 
 export default function MatchingPage() {
@@ -43,8 +73,17 @@ export default function MatchingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisPhase, setAnalysisPhase] = useState<AnalysisPhase>("idle");
+  const [analysisNotice, setAnalysisNotice] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [liveResult, setLiveResult] = useState<InfluencerAnalysisResult | null>(null);
+  const [analysisSource, setAnalysisSource] = useState<"mlc-llm" | "web-llm" | null>(
+    null,
+  );
+
+  const [engineBusy, setEngineBusy] = useState(false);
+  const [modelProgress, setModelProgress] = useState<number | null>(null);
+  const [modelProgressText, setModelProgressText] = useState("");
 
   const loadData = useCallback(async () => {
     const [scoresData, analysesData] = await Promise.all([
@@ -77,6 +116,13 @@ export default function MatchingPage() {
     load();
   }, [loadData]);
 
+  useEffect(() => {
+    const syncEngineBusy = () => setEngineBusy(isWebLLMLoading());
+    syncEngineBusy();
+    const id = window.setInterval(syncEngineBusy, 300);
+    return () => window.clearInterval(id);
+  }, []);
+
   const selected = useMemo(
     () => scores.find((s) => s.id === selectedId) ?? null,
     [scores, selectedId],
@@ -87,29 +133,90 @@ export default function MatchingPage() {
     [selected, analyses],
   );
 
-  async function recordMetric(
-    influencerName: string,
-    latencyMs: number,
-    status: "success" | "error",
+  async function persistAnalysis(
+    result: InfluencerAnalysisResult,
+    rawOutput: string,
+    analysisType: "mlc-llm" | "web-llm",
+    model: string,
+    startTime: number,
   ) {
+    if (!selected) return;
+
+    const latencyMs = Math.round(performance.now() - startTime);
     try {
       await monitoringApi.recordMetric({
-        influencer_name: influencerName,
+        influencer_name: selected.influencer_name,
         latency_ms: latencyMs,
-        status,
-        model: SERVER_LLM_MODEL_ID,
+        status: "success",
+        model,
       });
     } catch {
       // Do not interrupt the analysis flow if metric recording fails
     }
+
+    const updated = await scoresApi.update(selected.id, {
+      overall_score: result.overall_score,
+      engagement_score: result.engagement_score,
+      audience_score: result.audience_score,
+      brand_fit_score: result.brand_fit_score,
+    });
+
+    const created = await analysesApi.create({
+      influencer_name: selected.influencer_name,
+      platform: selected.platform,
+      analysis_type: analysisType,
+      summary: result.summary,
+      insights: result.insights.join("\n"),
+      raw_llm_output: rawOutput,
+      score_id: selected.id,
+    });
+
+    setScores((prev) =>
+      prev.map((s) => (s.id === selected.id ? updated.score : s)),
+    );
+    setAnalyses((prev) => [created.analysis, ...prev]);
+    setLiveResult(result);
+    setAnalysisSource(analysisType);
+  }
+
+  async function runWebLLMAnalyze(startTime: number) {
+    if (!selected) return;
+
+    setAnalysisPhase("browser");
+    if (!isWebLLMReady()) {
+      setModelProgress(0);
+      setModelProgressText("Preparing browser model...");
+    }
+
+    const { result, rawOutput } = await analyzeInfluencer(
+      {
+        name: selected.influencer_name,
+        platform: selected.platform,
+        notes: selected.notes,
+      },
+      (report) => {
+        setEngineBusy(isWebLLMLoading());
+        if (!isWebLLMReady() || report.progress < 1) {
+          setModelProgress(Math.round(report.progress * 100));
+          setModelProgressText(report.text);
+        }
+      },
+    );
+
+    setModelProgress(null);
+    await persistAnalysis(result, rawOutput, "web-llm", WEBLLM_MODEL_ID, startTime);
   }
 
   async function handleAnalyze() {
     if (!selected || analyzing) return;
 
     setAnalyzing(true);
+    setAnalysisPhase("server");
     setAnalysisError(null);
+    setAnalysisNotice(null);
     setLiveResult(null);
+    setAnalysisSource(null);
+    setModelProgress(null);
 
     const startTime = performance.now();
 
@@ -120,37 +227,57 @@ export default function MatchingPage() {
         notes: selected.notes,
       });
 
-      const latencyMs = Math.round(performance.now() - startTime);
-      await recordMetric(selected.influencer_name, latencyMs, "success");
+      await persistAnalysis(result, rawOutput, "mlc-llm", SERVER_LLM_MODEL_ID, startTime);
+    } catch (serverErr) {
+      if (isUnauthorized(serverErr)) {
+        handleUnauthorizedRedirect("/matching");
+        return;
+      }
 
-      const updated = await scoresApi.update(selected.id, {
-        overall_score: result.overall_score,
-        engagement_score: result.engagement_score,
-        audience_score: result.audience_score,
-        brand_fit_score: result.brand_fit_score,
-      });
+      if (!shouldFallbackToWebLLM(serverErr)) {
+        const latencyMs = Math.round(performance.now() - startTime);
+        try {
+          await monitoringApi.recordMetric({
+            influencer_name: selected.influencer_name,
+            latency_ms: latencyMs,
+            status: "error",
+            model: SERVER_LLM_MODEL_ID,
+          });
+        } catch {
+          // ignore
+        }
+        setAnalysisError(
+          serverErr instanceof ApiError
+            ? serverErr.message
+            : getWebLLMErrorMessage(serverErr),
+        );
+        return;
+      }
 
-      const created = await analysesApi.create({
-        influencer_name: selected.influencer_name,
-        platform: selected.platform,
-        analysis_type: "mlc-llm",
-        summary: result.summary,
-        insights: result.insights.join("\n"),
-        raw_llm_output: rawOutput,
-        score_id: selected.id,
-      });
-
-      setScores((prev) =>
-        prev.map((s) => (s.id === selected.id ? updated.score : s)),
+      setAnalysisNotice(
+        "Server MLC timed out or is unavailable. Continuing with browser WebLLM…",
       );
-      setAnalyses((prev) => [created.analysis, ...prev]);
-      setLiveResult(result);
-    } catch (err) {
-      const latencyMs = Math.round(performance.now() - startTime);
-      await recordMetric(selected.influencer_name, latencyMs, "error");
-      setAnalysisError(getAnalyzeErrorMessage(err));
+
+      try {
+        await runWebLLMAnalyze(startTime);
+      } catch (browserErr) {
+        const latencyMs = Math.round(performance.now() - startTime);
+        try {
+          await monitoringApi.recordMetric({
+            influencer_name: selected.influencer_name,
+            latency_ms: latencyMs,
+            status: "error",
+            model: WEBLLM_MODEL_ID,
+          });
+        } catch {
+          // ignore
+        }
+        setAnalysisError(getWebLLMErrorMessage(browserErr));
+      }
     } finally {
       setAnalyzing(false);
+      setAnalysisPhase("idle");
+      setEngineBusy(isWebLLMLoading());
     }
   }
 
@@ -158,6 +285,8 @@ export default function MatchingPage() {
     setSelectedId(id);
     setLiveResult(null);
     setAnalysisError(null);
+    setAnalysisNotice(null);
+    setAnalysisSource(null);
   }
 
   const displayScores = liveResult
@@ -183,6 +312,13 @@ export default function MatchingPage() {
       ? parseStoredInsights(savedAnalysis.insights)
       : [];
 
+  const analyzeButtonLabel = (() => {
+    if (!analyzing) return "Analyze";
+    if (analysisPhase === "server") return "Analyzing on server...";
+    if (engineBusy && !isWebLLMReady()) return "Loading browser model...";
+    return "Analyzing in browser...";
+  })();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-[var(--muted)]">
@@ -204,7 +340,8 @@ export default function MatchingPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">AI Matching Panel</h1>
         <p className="mt-1 text-[var(--muted)]">
-          Server-side influencer analysis via MLC-LLM ({SERVER_LLM_MODEL_ID})
+          Hybrid analysis: server MLC-LLM ({SERVER_LLM_MODEL_ID}) with WebLLM
+          fallback ({WEBLLM_MODEL_ID})
         </p>
       </div>
 
@@ -255,12 +392,27 @@ export default function MatchingPage() {
                   </div>
                   <button
                     onClick={handleAnalyze}
-                    disabled={analyzing}
+                    disabled={analyzing || engineBusy}
                     className="rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    {analyzing ? "Analyzing on server..." : "Analyze"}
+                    {analyzeButtonLabel}
                   </button>
                 </div>
+
+                {modelProgress !== null && (
+                  <div className="mt-5">
+                    <div className="mb-1.5 flex items-center justify-between text-xs text-[var(--muted)]">
+                      <span>{modelProgressText || "Loading browser model..."}</span>
+                      <span>{modelProgress}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-elevated)]">
+                      <div
+                        className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
+                        style={{ width: `${modelProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <ScorePill
@@ -274,6 +426,12 @@ export default function MatchingPage() {
                 </div>
               </div>
 
+              {analysisNotice && (
+                <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-5 py-4 text-sm text-amber-200">
+                  {analysisNotice}
+                </div>
+              )}
+
               {analysisError && (
                 <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-400">
                   {analysisError}
@@ -286,7 +444,10 @@ export default function MatchingPage() {
                     <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
                       AI Summary
                       {liveResult && (
-                        <span className="ml-2 normal-case text-[var(--accent)]">· new</span>
+                        <span className="ml-2 normal-case text-[var(--accent)]">
+                          · new
+                          {analysisSource === "web-llm" ? " (browser)" : " (server)"}
+                        </span>
                       )}
                     </h3>
                     <p className="leading-relaxed">{displaySummary}</p>
