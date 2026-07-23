@@ -28,10 +28,10 @@ func (s *ScoreService) Create(ctx context.Context, userID uuid.UUID, req dto.Cre
 		UserID:          userID,
 		InfluencerName:  strings.TrimSpace(req.InfluencerName),
 		Platform:        dto.NormalizePlatform(req.Platform),
-		OverallScore:    req.OverallScore,
-		EngagementScore: req.EngagementScore,
-		AudienceScore:   req.AudienceScore,
-		BrandFitScore:   req.BrandFitScore,
+		OverallScore:    dto.ScoreValueOrDefault(req.OverallScore),
+		EngagementScore: dto.ScoreValueOrDefault(req.EngagementScore),
+		AudienceScore:   dto.ScoreValueOrDefault(req.AudienceScore),
+		BrandFitScore:   dto.ScoreValueOrDefault(req.BrandFitScore),
 		RawPayload:      req.RawPayload,
 		Notes:           req.Notes,
 	}
@@ -89,8 +89,10 @@ func validateCreateScore(req dto.CreateScoreRequest) error {
 	if err := dto.ValidatePlatform(req.Platform); err != nil {
 		return err
 	}
-	for _, v := range []float64{req.OverallScore, req.EngagementScore, req.AudienceScore, req.BrandFitScore} {
-		if err := dto.ValidateScoreValue(v); err != nil {
+	for _, v := range []*float64{
+		req.OverallScore, req.EngagementScore, req.AudienceScore, req.BrandFitScore,
+	} {
+		if err := dto.ValidateOptionalScoreValue(v); err != nil {
 			return err
 		}
 	}

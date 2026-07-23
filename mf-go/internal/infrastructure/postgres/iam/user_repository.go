@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/masterfabric-go/masterfabric/internal/domain/iam/model"
 	domainErr "github.com/masterfabric-go/masterfabric/internal/shared/errors"
@@ -42,6 +43,10 @@ func (r *UserRepo) Create(ctx context.Context, user *model.User) error {
 		user.ID, user.Email, user.PasswordHash, user.FirstName, user.LastName, user.Status, user.CreatedAt, user.UpdatedAt,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return domainErr.New(domainErr.ErrAlreadyExists, "user with this email already exists", err)
+		}
 		return domainErr.New(domainErr.ErrInternal, "failed to create user", err)
 	}
 	return nil

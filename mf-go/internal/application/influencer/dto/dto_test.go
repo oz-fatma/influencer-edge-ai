@@ -24,6 +24,26 @@ func TestValidateScoreValue(t *testing.T) {
 	}
 }
 
+func TestScoreValueOrDefault(t *testing.T) {
+	if got := dto.ScoreValueOrDefault(nil); got != 0 {
+		t.Fatalf("expected 0 default, got %v", got)
+	}
+	v := 42.0
+	if got := dto.ScoreValueOrDefault(&v); got != 42 {
+		t.Fatalf("expected 42, got %v", got)
+	}
+}
+
+func TestValidateOptionalScoreValue(t *testing.T) {
+	if err := dto.ValidateOptionalScoreValue(nil); err != nil {
+		t.Fatalf("expected nil score to skip validation, got %v", err)
+	}
+	bad := 150.0
+	if err := dto.ValidateOptionalScoreValue(&bad); err == nil {
+		t.Fatal("expected invalid optional score to fail")
+	}
+}
+
 func TestClampListLimit(t *testing.T) {
 	if got := dto.ClampListLimit(0); got != dto.DefaultListLimit {
 		t.Fatalf("expected default limit %d, got %d", dto.DefaultListLimit, got)

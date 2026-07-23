@@ -97,7 +97,11 @@ func run() error {
 		db = nil
 	} else {
 		defer db.Close()
-		log.Info("connected to postgres", "schema", cfg.Database.Schema)
+		log.Info("connected to postgres",
+			"host", cfg.Database.Host,
+			"database", cfg.Database.DBName,
+			"schema", cfg.Database.Schema,
+		)
 		if cfg.Database.Schema != "" {
 			var searchPath string
 			if err := db.QueryRow(ctx, "SHOW search_path").Scan(&searchPath); err == nil {

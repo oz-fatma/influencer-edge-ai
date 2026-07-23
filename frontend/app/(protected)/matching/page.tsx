@@ -148,6 +148,13 @@ export default function MatchingPage() {
       const latencyMs = Math.round(performance.now() - startTime);
       await recordMetric(selected.influencer_name, latencyMs, "success");
 
+      const updated = await scoresApi.update(selected.id, {
+        overall_score: result.overall_score,
+        engagement_score: result.engagement_score,
+        audience_score: result.audience_score,
+        brand_fit_score: result.brand_fit_score,
+      });
+
       const created = await analysesApi.create({
         influencer_name: selected.influencer_name,
         platform: selected.platform,
@@ -158,6 +165,9 @@ export default function MatchingPage() {
         score_id: selected.id,
       });
 
+      setScores((prev) =>
+        prev.map((s) => (s.id === selected.id ? updated.score : s)),
+      );
       setAnalyses((prev) => [created.analysis, ...prev]);
       setLiveResult(result);
       setModelProgress(null);

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/masterfabric-go/masterfabric/internal/application/iam/dto"
@@ -28,7 +29,10 @@ func NewRegisterUseCase(userRepo repository.UserRepository, auth service.AuthSer
 // Execute registers a new user.
 func (uc *RegisterUseCase) Execute(ctx context.Context, req dto.RegisterRequest) (*dto.UserInfo, error) {
 	// Check if user already exists
-	existing, _ := uc.userRepo.GetByEmail(ctx, req.Email)
+	existing, err := uc.userRepo.GetByEmail(ctx, req.Email)
+	if err != nil && !errors.Is(err, domainErr.ErrNotFound) {
+		return nil, err
+	}
 	if existing != nil {
 		return nil, domainErr.New(domainErr.ErrAlreadyExists, "user with this email already exists", nil)
 	}

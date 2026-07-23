@@ -83,6 +83,18 @@ In Render, attach the existing Postgres instance to:
 
 When linked, Render injects `DATABASE_URL` pointing at `influencer_edge_db`. mf-go reads `DATABASE_URL` automatically (same as the legacy backend).
 
+**Important:** Do **not** set `DB_HOST`, `DB_USER`, `DB_PASSWORD`, or `DB_NAME` unless you know you need them. Each `DB_*` variable **overrides** the matching field from `DATABASE_URL`. A leftover `DB_NAME=masterfabric` makes mf-go connect to the wrong database — migrations on `influencer_edge_db` will not help and you will see `relation "mf.users" does not exist`.
+
+Recommended Render env for mf-go:
+
+| Key | Value |
+|---|---|
+| `DATABASE_URL` | (auto from linked Postgres) |
+| `DB_SCHEMA` | `mf` |
+| `KAFKA_ENABLED` | `false` |
+
+Remove manual `DB_NAME`, `DB_HOST`, `DB_USER`, `DB_PASSWORD` if present.
+
 Alternatively set explicit vars:
 
 | Key | Value |

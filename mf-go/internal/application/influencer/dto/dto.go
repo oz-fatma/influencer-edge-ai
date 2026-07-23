@@ -22,14 +22,14 @@ var allowedPlatforms = map[string]struct{}{
 }
 
 type CreateScoreRequest struct {
-	InfluencerName  string  `json:"influencer_name" validate:"required"`
-	Platform        string  `json:"platform" validate:"required"`
-	OverallScore    float64 `json:"overall_score"`
-	EngagementScore float64 `json:"engagement_score"`
-	AudienceScore   float64 `json:"audience_score"`
-	BrandFitScore   float64 `json:"brand_fit_score"`
-	RawPayload      string  `json:"raw_payload"`
-	Notes           string  `json:"notes"`
+	InfluencerName  string   `json:"influencer_name" validate:"required"`
+	Platform        string   `json:"platform" validate:"required"`
+	OverallScore    *float64 `json:"overall_score,omitempty"`
+	EngagementScore *float64 `json:"engagement_score,omitempty"`
+	AudienceScore   *float64 `json:"audience_score,omitempty"`
+	BrandFitScore   *float64 `json:"brand_fit_score,omitempty"`
+	RawPayload      string   `json:"raw_payload"`
+	Notes           string   `json:"notes"`
 }
 
 type UpdateScoreRequest struct {
@@ -136,6 +136,20 @@ func ValidateScoreValue(score float64) error {
 		return domainErr.New(domainErr.ErrValidation, "score must be between 0 and 100", nil)
 	}
 	return nil
+}
+
+func ScoreValueOrDefault(v *float64) float64 {
+	if v == nil {
+		return 0
+	}
+	return *v
+}
+
+func ValidateOptionalScoreValue(v *float64) error {
+	if v == nil {
+		return nil
+	}
+	return ValidateScoreValue(*v)
 }
 
 func ClampListLimit(raw int) int {

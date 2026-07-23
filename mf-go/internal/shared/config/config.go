@@ -253,6 +253,11 @@ func loadDatabaseConfig() DatabaseConfig {
 		}
 	}
 
+	// Shared Render DB: mf-go tables live in schema "mf" on influencer_edge_db.
+	if cfg.Schema == "" && cfg.DBName == "influencer_edge_db" {
+		cfg.Schema = "mf"
+	}
+
 	return cfg
 }
 

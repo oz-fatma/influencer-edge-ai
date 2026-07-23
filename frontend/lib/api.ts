@@ -161,6 +161,14 @@ export type CreateScorePayload = {
   notes?: string;
 };
 
+export type UpdateScorePayload = {
+  overall_score?: number;
+  engagement_score?: number;
+  audience_score?: number;
+  brand_fit_score?: number;
+  notes?: string;
+};
+
 export const scoresApi = {
   list: () =>
     apiFetch<{ scores: InfluencerScore[]; count: number }>("/api/v1/scores"),
@@ -169,6 +177,11 @@ export const scoresApi = {
   create: (payload: CreateScorePayload) =>
     apiFetch<{ score: InfluencerScore }>("/api/v1/scores", {
       method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  update: (id: string, payload: UpdateScorePayload) =>
+    apiFetch<{ score: InfluencerScore }>(`/api/v1/scores/${id}`, {
+      method: "PUT",
       body: JSON.stringify(payload),
     }),
 };

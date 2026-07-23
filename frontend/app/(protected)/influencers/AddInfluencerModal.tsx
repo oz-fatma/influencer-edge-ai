@@ -19,12 +19,6 @@ const PLATFORMS = [
 const inputClass =
   "w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30";
 
-function parseScore(value: string): number {
-  if (value.trim() === "") return 0;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : NaN;
-}
-
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -35,10 +29,6 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
   const [influencerName, setInfluencerName] = useState("");
   const [platform, setPlatform] = useState<string>("instagram");
   const [notes, setNotes] = useState("");
-  const [overallScore, setOverallScore] = useState("");
-  const [engagementScore, setEngagementScore] = useState("");
-  const [audienceScore, setAudienceScore] = useState("");
-  const [brandFitScore, setBrandFitScore] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -55,10 +45,6 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
     setInfluencerName("");
     setPlatform("instagram");
     setNotes("");
-    setOverallScore("");
-    setEngagementScore("");
-    setAudienceScore("");
-    setBrandFitScore("");
     setError(null);
   }
 
@@ -70,16 +56,6 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
 
   function validate(): string | null {
     if (!influencerName.trim()) return "Influencer name is required";
-    const scores = [
-      { label: "Overall score", value: parseScore(overallScore) },
-      { label: "Engagement score", value: parseScore(engagementScore) },
-      { label: "Audience score", value: parseScore(audienceScore) },
-      { label: "Brand fit score", value: parseScore(brandFitScore) },
-    ];
-    for (const { label, value } of scores) {
-      if (Number.isNaN(value)) return `${label} must be a valid number`;
-      if (value < 0 || value > 100) return `${label} must be between 0 and 100`;
-    }
     return null;
   }
 
@@ -96,10 +72,6 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
     const payload: CreateScorePayload = {
       influencer_name: influencerName.trim(),
       platform,
-      overall_score: parseScore(overallScore),
-      engagement_score: parseScore(engagementScore),
-      audience_score: parseScore(audienceScore),
-      brand_fit_score: parseScore(brandFitScore),
     };
     if (notes.trim()) payload.notes = notes.trim();
 
@@ -143,7 +115,7 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
               Add New Influencer
             </h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              Manually add an influencer record to the pool
+              Add basic profile info to the pool. Run Analyze in Matching to generate scores.
             </p>
           </div>
           <button
@@ -204,38 +176,8 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               className={`${inputClass} resize-none`}
-              placeholder="Beauty and lifestyle niche"
+              placeholder="Beauty and lifestyle niche, audience demographics, past campaigns..."
             />
-          </div>
-
-          <div>
-            <p className="mb-2 text-sm font-medium">Scores (0–100, optional)</p>
-            <div className="grid grid-cols-2 gap-3">
-              <ScoreField
-                id="overall_score"
-                label="Overall"
-                value={overallScore}
-                onChange={setOverallScore}
-              />
-              <ScoreField
-                id="engagement_score"
-                label="Engagement"
-                value={engagementScore}
-                onChange={setEngagementScore}
-              />
-              <ScoreField
-                id="audience_score"
-                label="Audience"
-                value={audienceScore}
-                onChange={setAudienceScore}
-              />
-              <ScoreField
-                id="brand_fit_score"
-                label="Brand Fit"
-                value={brandFitScore}
-                onChange={setBrandFitScore}
-              />
-            </div>
           </div>
 
           {error && (
@@ -263,37 +205,6 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
           </div>
         </form>
       </div>
-    </div>
-  );
-}
-
-function ScoreField({
-  id,
-  label,
-  value,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-xs text-[var(--muted)]">
-        {label}
-      </label>
-      <input
-        id={id}
-        type="number"
-        min={0}
-        max={100}
-        step={1}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={inputClass}
-        placeholder="0"
-      />
     </div>
   );
 }
