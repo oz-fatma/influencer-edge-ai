@@ -168,15 +168,20 @@ export default function AddInfluencerModal({ open, onClose, onSuccess }: Props) 
 
           <div>
             <label htmlFor="notes" className="mb-1.5 block text-sm font-medium">
-              Notes
+              Profil bilgisi
             </label>
+            <p className="mb-2 text-xs leading-relaxed text-[var(--muted)]">
+              Hedef kitlesini, takipçi profilini, nişini, tahmini engagement oranını
+              ve geçmiş iş birliklerini yazarsan AI analizi daha anlamlı olur. Bu alan
+              opsiyoneldir.
+            </p>
             <textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={3}
+              rows={4}
               className={`${inputClass} resize-none`}
-              placeholder="Beauty and lifestyle niche, audience demographics, past campaigns..."
+              placeholder="Örn: Niş: beauty & skincare · Kitle: TR, kadın 18–34 · Takipçi: ~80K · Engagement: %4 · İçerik: ürün incelemesi, Reels · Geçmiş: yerel kozmetik markaları"
             />
           </div>
 
