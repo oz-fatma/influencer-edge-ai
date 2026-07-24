@@ -110,7 +110,8 @@ func run() error {
 			}
 			usersTable := database.QualifyTable(cfg.Database.Schema, "users")
 			requestLogsTable := database.QualifyTable(cfg.Database.Schema, "request_logs")
-			log.Info("postgres qualified tables", "users", usersTable, "request_logs", requestLogsTable)
+			llmRequestsTable := database.QualifyTable(cfg.Database.Schema, "llm_requests")
+			log.Info("postgres qualified tables", "users", usersTable, "request_logs", requestLogsTable, "llm_requests", llmRequestsTable)
 			var userCount int
 			if err := db.QueryRow(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", usersTable)).Scan(&userCount); err != nil {
 				log.Error("users table not accessible", "table", usersTable, "error", err)
@@ -240,6 +241,7 @@ func buildDependencies(
 	// --- Repositories ---
 	userRepo := pgIam.NewUserRepo(db, cfg.Database.Schema)
 	requestLogRepo := pgObservability.NewRequestLogRepository(db, cfg.Database.Schema)
+	llmRequestRepo := pgObservability.NewLLMRequestRepository(db, cfg.Database.Schema)
 	deps.RequestLogWriter = requestLogRepo
 	roleRepo := pgIam.NewRoleRepo(db)
 	orgRepo := pgTenant.NewOrgRepo(db)
@@ -309,7 +311,7 @@ func buildDependencies(
 	scoreRepo := pgInfluencer.NewScoreRepo(db)
 	analysisRepo := pgInfluencer.NewAnalysisRepo(db)
 	llmMetricsStore := infraRedis.NewLLMMetricsStore(redisClient)
-	llmAnalyzer := infraLLM.NewAnalyzer(cfg.LLM)
+	llmAnalyzer := infraLLM.NewAnalyzer(cfg.LLM, llmRequestRepo)
 	if llmAnalyzer != nil {
 		log.Info("LLM proxy enabled", "base_url", cfg.LLM.BaseURL, "model", cfg.LLM.Model)
 	} else {

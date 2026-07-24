@@ -259,7 +259,7 @@ Or skip — `request_logs` is also created inside `mf` when you run the full sch
 | mf-go `/health/ready` | Works after DB env is set |
 | mf-go auth (register/login) | Works after `migrate_render_schema.sh` + `DB_SCHEMA=mf` |
 | mf-go influencer API | Works after schema migration |
-| mf-go request logging / Grafana | Works (`mf.request_logs` or public migration) |
+| mf-go request logging / Grafana | Works (`mf.request_logs`, `mf.llm_requests`, or public migration) |
 
 ### 4. Next step for full mf-go on same DB
 

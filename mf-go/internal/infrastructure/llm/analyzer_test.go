@@ -1,6 +1,11 @@
 package llm
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -43,7 +48,130 @@ func TestParseAnalysisJSON_invalid(t *testing.T) {
 }
 
 func TestNewAnalyzer_nilWhenNoBaseURL(t *testing.T) {
-	if NewAnalyzer(config.LLMConfig{Timeout: time.Minute}) != nil {
+	if NewAnalyzer(config.LLMConfig{Timeout: time.Minute}, nil) != nil {
 		t.Fatal("expected nil analyzer")
 	}
+}
+
+type recordingLLMWriter struct {
+	mu     sync.Mutex
+	calls  []llmRequestRecord
+}
+
+type llmRequestRecord struct {
+	model        string
+	promptLength int
+	durationMs   int64
+	success      bool
+}
+
+func (w *recordingLLMWriter) Insert(_ context.Context, modelName string, promptLength int, durationMs int64, success bool) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.calls = append(w.calls, llmRequestRecord{
+		model:        modelName,
+		promptLength: promptLength,
+		durationMs:   durationMs,
+		success:      success,
+	})
+	return nil
+}
+
+func TestAnalyze_recordsSuccessfulLLMRequest(t *testing.T) {
+	validJSON := `{"overall_score":80,"engagement_score":80,"audience_score":80,"brand_fit_score":80,"summary":"Good fit","insights":["Strong niche alignment"]}`
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":` + strconvQuote(validJSON) + `}}]}`))
+	}))
+	defer srv.Close()
+
+	writer := &recordingLLMWriter{}
+	analyzer := NewAnalyzer(config.LLMConfig{
+		BaseURL: srv.URL,
+		Model:   "gemma2:2b",
+		Timeout: 5 * time.Second,
+	}, writer)
+
+	_, _, err := analyzer.Analyze(context.Background(), "Ada", "instagram", "tech")
+	if err != nil {
+		t.Fatalf("Analyze: %v", err)
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		writer.mu.Lock()
+		n := len(writer.calls)
+		writer.mu.Unlock()
+		if n > 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("expected async llm request log")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	writer.mu.Lock()
+	defer writer.mu.Unlock()
+	if len(writer.calls) != 1 {
+		t.Fatalf("calls = %d, want 1", len(writer.calls))
+	}
+	call := writer.calls[0]
+	if call.model != "gemma2:2b" {
+		t.Fatalf("model = %q", call.model)
+	}
+	if call.promptLength <= 0 {
+		t.Fatalf("promptLength = %d", call.promptLength)
+	}
+	if call.durationMs < 0 {
+		t.Fatalf("durationMs = %d", call.durationMs)
+	}
+	if !call.success {
+		t.Fatal("expected success=true")
+	}
+}
+
+func TestAnalyze_recordsFailedLLMRequest(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+	}))
+	defer srv.Close()
+
+	writer := &recordingLLMWriter{}
+	analyzer := NewAnalyzer(config.LLMConfig{
+		BaseURL: srv.URL,
+		Model:   "gemma2:2b",
+		Timeout: 5 * time.Second,
+	}, writer)
+
+	_, _, err := analyzer.Analyze(context.Background(), "Ada", "instagram", "tech")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		writer.mu.Lock()
+		n := len(writer.calls)
+		writer.mu.Unlock()
+		if n > 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("expected async llm request log")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	writer.mu.Lock()
+	defer writer.mu.Unlock()
+	if !writer.calls[0].success {
+		return
+	}
+	t.Fatal("expected success=false")
+}
+
+func strconvQuote(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }

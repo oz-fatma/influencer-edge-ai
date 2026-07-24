@@ -6,13 +6,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/masterfabric-go/masterfabric/internal/shared/config"
 )
+
+const systemPrompt = "You are an expert influencer marketing analyst. ONLY return valid JSON. No markdown, no explanation, no code fences."
+
+// LLMRequestWriter persists outbound LLM call metadata (model, prompt size, latency, success).
+type LLMRequestWriter interface {
+	Insert(ctx context.Context, modelName string, promptLength int, durationMs int64, success bool) error
+}
 
 const fewShotExample = `{
   "overall_score": 82.5,
@@ -39,12 +48,13 @@ type AnalysisResult struct {
 
 // Analyzer calls an OpenAI-compatible LLM server (Ollama via /v1/chat/completions).
 type Analyzer struct {
-	baseURL string
-	model   string
-	client  *http.Client
+	baseURL     string
+	model       string
+	client      *http.Client
+	requestLog  LLMRequestWriter
 }
 
-func NewAnalyzer(cfg config.LLMConfig) *Analyzer {
+func NewAnalyzer(cfg config.LLMConfig, requestLog LLMRequestWriter) *Analyzer {
 	if cfg.BaseURL == "" {
 		return nil
 	}
@@ -54,6 +64,7 @@ func NewAnalyzer(cfg config.LLMConfig) *Analyzer {
 		client: &http.Client{
 			Timeout: cfg.Timeout,
 		},
+		requestLog: requestLog,
 	}
 }
 
@@ -62,16 +73,25 @@ func (a *Analyzer) Model() string {
 }
 
 func (a *Analyzer) Analyze(ctx context.Context, name, platform, notes string) (*AnalysisResult, string, error) {
+	userPrompt := buildPrompt(name, platform, notes)
+	promptLength := len(systemPrompt) + len(userPrompt)
+
+	start := time.Now()
+	success := false
+	defer func() {
+		a.recordRequest(promptLength, time.Since(start).Milliseconds(), success)
+	}()
+
 	payload := chatCompletionRequest{
 		Model: a.model,
 		Messages: []chatMessage{
 			{
 				Role:    "system",
-				Content: "You are an expert influencer marketing analyst. ONLY return valid JSON. No markdown, no explanation, no code fences.",
+				Content: systemPrompt,
 			},
 			{
 				Role:    "user",
-				Content: buildPrompt(name, platform, notes),
+				Content: userPrompt,
 			},
 		},
 		Temperature: 0.1,
@@ -118,7 +138,26 @@ func (a *Analyzer) Analyze(ctx context.Context, name, platform, notes string) (*
 	if err != nil {
 		return nil, rawOutput, err
 	}
+	success = true
 	return result, rawOutput, nil
+}
+
+func (a *Analyzer) recordRequest(promptLength int, durationMs int64, success bool) {
+	if a == nil || a.requestLog == nil {
+		return
+	}
+	model := a.model
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := a.requestLog.Insert(ctx, model, promptLength, durationMs, success); err != nil {
+			slog.Default().Warn("failed to record llm request log",
+				"error", err,
+				"model", model,
+				"success", success,
+			)
+		}
+	}()
 }
 
 type chatMessage struct {
