@@ -37,7 +37,7 @@ type AnalysisResult struct {
 	Insights        []string `json:"insights"`
 }
 
-// Analyzer calls an OpenAI-compatible MLC-LLM server.
+// Analyzer calls an OpenAI-compatible LLM server (Ollama via /v1/chat/completions).
 type Analyzer struct {
 	baseURL string
 	model   string

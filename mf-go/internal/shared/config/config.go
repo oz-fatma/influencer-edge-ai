@@ -21,7 +21,7 @@ type Config struct {
 	LLM       LLMConfig
 }
 
-// LLMConfig holds OpenAI-compatible MLC-LLM proxy settings.
+// LLMConfig holds OpenAI-compatible Ollama proxy settings (LLM_BASE_URL → tunnel/Caddy).
 type LLMConfig struct {
 	BaseURL string
 	Model   string
@@ -160,7 +160,7 @@ func Load() *Config {
 func loadLLMConfig() LLMConfig {
 	return LLMConfig{
 		BaseURL: strings.TrimRight(envOrDefault("LLM_BASE_URL", ""), "/"),
-		Model:   envOrDefault("LLM_MODEL", "gemma-2b-it-q4f16_1-MLC"),
+		Model:   envOrDefault("LLM_MODEL", "gemma2:2b"),
 		Timeout: time.Duration(envOrDefaultInt("LLM_TIMEOUT_SECONDS", 300)) * time.Second,
 	}
 }

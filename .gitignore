@@ -1,6 +1,4 @@
 # Python
-llm-service/venv/
-llm-service/__pycache__/
 *.pyc
 
 # Node
@@ -19,3 +17,4 @@ mf-go/.env
 
 # OS
 .DS_Store
+llm-service/venv/

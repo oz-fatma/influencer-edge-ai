@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
-# Quick checks for the Caddy + MLC reverse-proxy demo stack.
+# Quick checks for the Caddy + Ollama reverse-proxy demo stack.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
-echo "=== 1) MLC direct (:8000) ==="
-if curl -sf -m 5 http://localhost:8000/v1/models >/dev/null 2>&1; then
-  echo "OK — MLC responding on :8000"
-  if curl -sI -m 5 http://localhost:8000/v1/models | grep -qi 'x-reverse-proxy'; then
-    echo "WARN — unexpected X-Reverse-Proxy on direct MLC"
+echo "=== 1) Ollama direct (:11434) ==="
+if curl -sf -m 5 http://localhost:11434/v1/models >/dev/null 2>&1; then
+  echo "OK — Ollama responding on :11434"
+  if curl -sI -m 5 http://localhost:11434/v1/models | grep -qi 'x-reverse-proxy'; then
+    echo "WARN — unexpected X-Reverse-Proxy on direct Ollama"
   else
-    echo "OK — no Caddy header on direct MLC (expected)"
+    echo "OK — no Caddy header on direct Ollama (expected)"
   fi
 else
-  echo "FAIL — start MLC: docker start influencer-llm-service"
+  echo "FAIL — start Ollama: cd llm-service && docker compose up -d"
+  echo "      then pull model: docker exec -it ollama ollama pull gemma2:2b"
   exit 1
 fi
 

@@ -77,7 +77,7 @@ export default function MatchingPage() {
   const [analysisNotice, setAnalysisNotice] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [liveResult, setLiveResult] = useState<InfluencerAnalysisResult | null>(null);
-  const [analysisSource, setAnalysisSource] = useState<"mlc-llm" | "web-llm" | null>(
+  const [analysisSource, setAnalysisSource] = useState<"ollama" | "web-llm" | null>(
     null,
   );
 
@@ -136,7 +136,7 @@ export default function MatchingPage() {
   async function persistAnalysis(
     result: InfluencerAnalysisResult,
     rawOutput: string,
-    analysisType: "mlc-llm" | "web-llm",
+    analysisType: "ollama" | "web-llm",
     model: string,
     startTime: number,
   ) {
@@ -227,7 +227,7 @@ export default function MatchingPage() {
         notes: selected.notes,
       });
 
-      await persistAnalysis(result, rawOutput, "mlc-llm", SERVER_LLM_MODEL_ID, startTime);
+      await persistAnalysis(result, rawOutput, "ollama", SERVER_LLM_MODEL_ID, startTime);
     } catch (serverErr) {
       if (isUnauthorized(serverErr)) {
         handleUnauthorizedRedirect("/matching");
@@ -255,7 +255,7 @@ export default function MatchingPage() {
       }
 
       setAnalysisNotice(
-        "Server MLC timed out or is unavailable. Continuing with browser WebLLM…",
+        "Server Ollama timed out or is unavailable. Continuing with browser WebLLM…",
       );
 
       try {
@@ -340,7 +340,7 @@ export default function MatchingPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">AI Matching Panel</h1>
         <p className="mt-1 text-[var(--muted)]">
-          Hybrid analysis: server MLC-LLM ({SERVER_LLM_MODEL_ID}) with WebLLM
+          Hybrid analysis: server Ollama ({SERVER_LLM_MODEL_ID}) with WebLLM
           fallback ({WEBLLM_MODEL_ID})
         </p>
       </div>

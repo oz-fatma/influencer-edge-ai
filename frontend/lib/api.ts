@@ -238,7 +238,7 @@ export const monitoringApi = {
     }),
 };
 
-export const SERVER_LLM_MODEL_ID = "gemma-2b-it-q4f16_1-MLC";
+export const SERVER_LLM_MODEL_ID = "gemma2:2b";
 
 export type InfluencerAnalysisResult = {
   overall_score: number;

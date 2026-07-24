@@ -1,0 +1,16 @@
+# Local Ollama — Gemma 2 inference on :11434
+# Start: docker compose up -d
+# Pull model: docker exec -it ollama ollama pull gemma2:2b
+
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  ollama_data:

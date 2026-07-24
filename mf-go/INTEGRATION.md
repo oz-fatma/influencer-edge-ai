@@ -51,36 +51,37 @@ Mirrors legacy `backend/` API under `/api/v1`:
 
 - `POST/GET /api/v1/scores`, `GET/PUT/DELETE /api/v1/scores/{id}`
 - `POST/GET /api/v1/analyses`, `GET /api/v1/influencer-analysis/{id}`
-- `POST /api/v1/llm/analyze` — server-side MLC-LLM proxy (requires `LLM_BASE_URL`)
+- `POST /api/v1/llm/analyze` — server-side Ollama proxy (requires `LLM_BASE_URL`)
 - `POST /api/v1/llm-metrics`, `GET /api/v1/monitoring/stats`
 
-## MLC-LLM proxy (Vercel Analyze → Render → your Mac)
+## Ollama proxy (Vercel Analyze → Render → your Mac)
 
 Traffic path (minimal):
 
 ```text
-Vercel frontend → Render mf-go → Cloudflare tunnel → Mac Docker :8000 (MLC-LLM)
+Vercel frontend → Render mf-go → Cloudflare tunnel → Mac Docker :11434 (Ollama)
 ```
 
 **Sunum / somut reverse proxy (Caddy katmanı):** see [`../llm-service/PROXY-DEMO.md`](../llm-service/PROXY-DEMO.md)
 
 ```text
-Vercel → Render mf-go → Tunnel → Caddy :8080 → MLC :8000
+Vercel → Render mf-go → Tunnel → Caddy :8080 → Ollama :11434
 ```
 
-Tunnel must point at **Caddy (`:8080`)**, not MLC directly, so responses include `X-Reverse-Proxy: Caddy`.
+Tunnel must point at **Caddy (`:8080`)**, not Ollama directly, so responses include `X-Reverse-Proxy: Caddy`.
 
-### 1. Local MLC + Caddy + tunnel
+### 1. Local Ollama + Caddy + tunnel
 
 ```bash
-docker start influencer-llm-service
-curl http://localhost:8000/v1/models
-
 cd llm-service
+docker compose up -d
+docker exec -it ollama ollama pull gemma2:2b
+curl http://localhost:11434/v1/models
+
 docker compose -f docker-compose.proxy.yml up -d
 ./demo-proxy.sh   # verifies Caddy header on :8080
 
-# Expose Caddy (not MLC) — keep this terminal open
+# Expose Caddy (not Ollama) — keep this terminal open
 cloudflared tunnel --url http://127.0.0.1:8080
 ```
 
@@ -91,7 +92,7 @@ Copy the `https://*.trycloudflare.com` URL from the tunnel output.
 | Key | Value |
 |---|---|
 | `LLM_BASE_URL` | `https://your-tunnel.trycloudflare.com` |
-| `LLM_MODEL` | `gemma-2b-it-q4f16_1-MLC` (optional; default) |
+| `LLM_MODEL` | `gemma2:2b` (optional; default) |
 | `LLM_TIMEOUT_SECONDS` | `300` (CPU inference can be slow) |
 | `SERVER_WRITE_TIMEOUT_SECONDS` | `600` (must exceed LLM timeout) |
 
