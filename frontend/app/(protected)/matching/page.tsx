@@ -222,6 +222,7 @@ export default function MatchingPage() {
     const startTime = performance.now();
 
     try {
+      // MCP alternative available via sendMCPRequest() from @/lib/mcp
       const { result, raw_output: rawOutput } = await llmApi.analyze(
         {
           influencer_name: selected.influencer_name,

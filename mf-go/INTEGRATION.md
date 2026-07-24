@@ -52,6 +52,7 @@ Mirrors legacy `backend/` API under `/api/v1`:
 - `POST/GET /api/v1/scores`, `GET/PUT/DELETE /api/v1/scores/{id}`
 - `POST/GET /api/v1/analyses`, `GET /api/v1/influencer-analysis/{id}`
 - `POST /api/v1/llm/analyze` — server-side Ollama proxy (requires `LLM_BASE_URL`)
+- `POST /api/v1/mcp/request` — MCP-formatted analyze (`request_type: analyze_influencer`; legacy `/llm/analyze` unchanged)
 - `POST /api/v1/llm-metrics`, `GET /api/v1/monitoring/stats`
 
 ## Ollama proxy (Vercel Analyze → Render → your Mac)
@@ -93,6 +94,7 @@ Copy the `https://*.trycloudflare.com` URL from the tunnel output.
 |---|---|
 | `LLM_BASE_URL` | `https://your-tunnel.trycloudflare.com` |
 | `LLM_MODEL` | `gemma2:2b` (optional; default) |
+| `MCP_MODEL` | `gemma-influencer-ft` (optional; MCP adapter default) |
 | `LLM_TIMEOUT_SECONDS` | `300` (CPU inference can be slow) |
 | `SERVER_WRITE_TIMEOUT_SECONDS` | `600` (must exceed LLM timeout) |
 
@@ -111,9 +113,50 @@ curl -X POST https://influencer-edge-mfgo.onrender.com/api/v1/llm/analyze \
   -d '{"influencer_name":"Ada Lovelace","platform":"instagram","notes":"Tech & education niche"}'
 ```
 
+MCP format (same Ollama backend, enriched response):
+
+```bash
+curl -X POST https://influencer-edge-mfgo.onrender.com/api/v1/mcp/request \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "request_type": "analyze_influencer",
+    "context": {
+      "influencer_name": "Ada Lovelace",
+      "platform": "instagram",
+      "notes": "Tech & education niche"
+    },
+    "query": "Assess brand-fit for cosmetics campaigns"
+  }'
+```
+
+Response shape:
+
+```json
+{
+  "data": {
+    "overall_score": 82.5,
+    "engagement_score": 88,
+    "audience_score": 79,
+    "brand_fit_score": 80,
+    "summary": "...",
+    "insights": ["..."],
+    "raw_output": "..."
+  },
+  "metadata": {
+    "model": "gemma-influencer-ft",
+    "latency_ms": 12345,
+    "timestamp": "2026-07-24T18:00:00.000000000Z",
+    "request_type": "analyze_influencer"
+  },
+  "source": "mcp-ollama"
+}
+```
+
 ### 4. Frontend
 
 The matching page calls `POST /api/v1/llm/analyze` instead of WebLLM in the browser.
+An MCP alternative is available via `sendMCPRequest()` in `frontend/lib/mcp.ts` (legacy flow unchanged).
 Ensure `NEXT_PUBLIC_API_URL` points at mf-go on Render.
 
 **Demo caveats:** Mac, Docker, and `cloudflared` must stay running. Tunnel URL changes on restart.

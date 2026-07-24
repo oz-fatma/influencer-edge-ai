@@ -19,6 +19,13 @@ type Config struct {
 	WebSocket WebSocketConfig
 	Log       LogConfig
 	LLM       LLMConfig
+	MCP       MCPConfig
+}
+
+// MCPConfig holds Model Context Protocol adapter settings.
+type MCPConfig struct {
+	// Model is the default adapter model (MCP_MODEL env, else LLM_MODEL, else gemma-influencer-ft).
+	Model string
 }
 
 // LLMConfig holds OpenAI-compatible Ollama proxy settings (LLM_BASE_URL → tunnel/Caddy).
@@ -154,7 +161,18 @@ func Load() *Config {
 			Format: envOrDefault("LOG_FORMAT", "json"),
 		},
 		LLM: loadLLMConfig(),
+		MCP: loadMCPConfig(),
 	}
+}
+
+func loadMCPConfig() MCPConfig {
+	if model := os.Getenv("MCP_MODEL"); model != "" {
+		return MCPConfig{Model: model}
+	}
+	if model := os.Getenv("LLM_MODEL"); model != "" {
+		return MCPConfig{Model: model}
+	}
+	return MCPConfig{Model: "gemma-influencer-ft"}
 }
 
 func loadLLMConfig() LLMConfig {

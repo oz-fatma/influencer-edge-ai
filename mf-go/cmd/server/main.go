@@ -18,11 +18,13 @@ import (
 	apimgmtHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/apimanagement"
 	auditHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/audit"
 	influencerHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/influencer"
+	mcpHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/mcp"
 	iamHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/iam"
 	realtimeHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/realtime"
 	tenantHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/tenant"
 	"github.com/masterfabric-go/masterfabric/internal/infrastructure/http/router"
 	infraLLM "github.com/masterfabric-go/masterfabric/internal/infrastructure/llm"
+	infraMCP "github.com/masterfabric-go/masterfabric/internal/infrastructure/mcp"
 	infraKafka "github.com/masterfabric-go/masterfabric/internal/infrastructure/kafka"
 	infraRedis "github.com/masterfabric-go/masterfabric/internal/infrastructure/redis"
 	infraWS "github.com/masterfabric-go/masterfabric/internal/infrastructure/websocket"
@@ -317,6 +319,11 @@ func buildDependencies(
 	} else {
 		log.Info("LLM proxy disabled", "hint", "set LLM_BASE_URL to enable /api/v1/llm/analyze")
 	}
+	mcpService := infraMCP.NewService(llmAnalyzer, cfg.MCP.Model)
+	if llmAnalyzer != nil {
+		log.Info("MCP adapter enabled", "model", cfg.MCP.Model, "endpoint", "/api/v1/mcp/request")
+	}
+	deps.MCPHandler = mcpHandler.NewHandler(mcpService)
 	deps.InfluencerHandler = influencerHandler.NewHandler(
 		influencerUC.NewScoreService(scoreRepo),
 		influencerUC.NewAnalysisService(analysisRepo, scoreRepo),

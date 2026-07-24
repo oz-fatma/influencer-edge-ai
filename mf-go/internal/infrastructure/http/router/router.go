@@ -17,6 +17,7 @@ import (
 	"github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/health"
 	iamHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/iam"
 	influencerHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/influencer"
+	mcpHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/mcp"
 	realtimeHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/realtime"
 	tenantHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/tenant"
 
@@ -55,6 +56,7 @@ type Dependencies struct {
 	APIMgmtHandler  *apimgmtHandler.Handler
 	AuditHandler      *auditHandler.Handler
 	InfluencerHandler *influencerHandler.Handler
+	MCPHandler        *mcpHandler.Handler
 	RealtimeHandler   *realtimeHandler.Handler
 
 	// Gateway
@@ -194,6 +196,10 @@ func New(deps Dependencies) *chi.Mux {
 			// InfluencerEdge domain (scores, analyses, LLM monitoring)
 			if deps.InfluencerHandler != nil {
 				registerInfluencerRoutes(r, deps.InfluencerHandler)
+			}
+
+			if deps.MCPHandler != nil {
+				r.Post("/mcp/request", deps.MCPHandler.ProcessRequest)
 			}
 
 			// Catch-all handler for managed endpoints (must be last in the group)
