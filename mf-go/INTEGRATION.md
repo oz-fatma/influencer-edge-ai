@@ -6,7 +6,7 @@ This folder contains [masterfabric-go](https://github.com/gurkanfikretgunak/mast
 
 | Service | Legacy `backend/` | `mf-go/` |
 |---------|-------------------|----------|
-| API | `:8080` | `:8081` |
+| API | `:8080` | `:8081` (dev) / `:8082` (scale-demo nginx LB) |
 | Postgres | `:5433` | `:5434` |
 | Redis | `:6379` | `:6380` |
 
@@ -127,6 +127,80 @@ NEXT_PUBLIC_MF_API_URL=http://localhost:8081
 ```
 
 Legacy frontend continues using `NEXT_PUBLIC_API_URL=http://localhost:8080`.
+
+## Horizontal scaling demo (Docker Compose)
+
+Conceptual equivalent of **Kubernetes pod scaling + Service load balancer**, using Compose profiles so normal `./dev.sh infra` is unchanged.
+
+```text
+curl :8082  →  nginx  →  app replica 1 | 2 | 3  →  postgres / redis
+```
+
+| Component | Role |
+|---|---|
+| `app` (profile `scale-demo`) | mf-go API; no host port — `expose: 8080` only |
+| `nginx` (profile `scale-demo`) | Round-robin LB on host `:8082` |
+| `X-Instance-ID` | Each replica identifies itself on `/health/live` |
+
+### Start the demo
+
+```bash
+cd mf-go
+
+# 1) Infra (postgres + redis — same as dev)
+docker compose -f deployments/docker-compose.yml up -d postgres redis
+
+# 2) Migrations (required before app replicas start cleanly)
+./dev.sh migrate
+# or: ./scripts/migrate.sh up
+
+# 3) Build and run 3 app replicas + nginx LB
+docker compose -f deployments/docker-compose.yml --profile scale-demo up --build --scale app=3 -d
+
+# 4) Wait until replicas are up
+docker compose -f deployments/docker-compose.yml --profile scale-demo ps
+```
+
+Note: `deploy.replicas: 3` in compose applies to Docker Swarm only. With regular Compose use `--scale app=3` as above.
+
+### Verify load balancing
+
+Single request (see which replica answered):
+
+```bash
+curl -i http://127.0.0.1:8082/health/live
+# Look for: X-Instance-ID: <container hostname>
+# Body: {"status":"alive","instance_id":"<same id>"}
+```
+
+Automated check (expects ≥2 distinct instances across 15 requests):
+
+```bash
+chmod +x scripts/test_load_balancer.sh
+./scripts/test_load_balancer.sh
+```
+
+Optional env:
+
+```bash
+LB_URL=http://127.0.0.1:8082 REQUESTS=20 MIN_UNIQUE=3 ./scripts/test_load_balancer.sh
+```
+
+### Stop the demo
+
+```bash
+docker compose -f deployments/docker-compose.yml --profile scale-demo down
+# Infra keeps running unless you also: docker compose -f deployments/docker-compose.yml down
+```
+
+Optional: set a friendly replica name per container:
+
+```yaml
+environment:
+  INSTANCE_ID: app-replica-${HOSTNAME}  # not expanded in compose; set at runtime if needed
+```
+
+By default each container uses Docker `HOSTNAME` (unique per replica).
 
 ## Tests
 

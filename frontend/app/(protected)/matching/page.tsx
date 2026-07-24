@@ -10,6 +10,7 @@ import {
   monitoringApi,
   scoresApi,
   SERVER_LLM_MODEL_ID,
+  SERVER_LLM_ANALYZE_TIMEOUT_MS,
   type InfluencerAnalysis,
   type InfluencerAnalysisResult,
   type InfluencerScore,
@@ -43,7 +44,7 @@ function shouldFallbackToWebLLM(error: unknown): boolean {
     if (error.status === 401 || error.status === 403 || error.status === 400) {
       return false;
     }
-    if ([502, 503, 504, 524].includes(error.status)) {
+    if ([408, 502, 503, 504, 524].includes(error.status)) {
       return true;
     }
     const msg = error.message.toLowerCase();
@@ -221,11 +222,14 @@ export default function MatchingPage() {
     const startTime = performance.now();
 
     try {
-      const { result, raw_output: rawOutput } = await llmApi.analyze({
-        influencer_name: selected.influencer_name,
-        platform: selected.platform,
-        notes: selected.notes,
-      });
+      const { result, raw_output: rawOutput } = await llmApi.analyze(
+        {
+          influencer_name: selected.influencer_name,
+          platform: selected.platform,
+          notes: selected.notes,
+        },
+        SERVER_LLM_ANALYZE_TIMEOUT_MS,
+      );
 
       await persistAnalysis(result, rawOutput, "ollama", SERVER_LLM_MODEL_ID, startTime);
     } catch (serverErr) {

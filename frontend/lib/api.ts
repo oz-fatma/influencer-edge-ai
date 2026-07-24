@@ -17,6 +17,8 @@ export class ApiError extends Error {
 type ApiFetchOptions = RequestInit & {
   token?: string | null;
   auth?: boolean;
+  /** Abort the request after this many milliseconds (browser fetch timeout). */
+  timeoutMs?: number;
 };
 
 function extractErrorMessage(data: unknown, status: number): string {
@@ -32,7 +34,14 @@ export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {},
 ): Promise<T> {
-  const { token, auth = true, headers: initHeaders, ...rest } = options;
+  const {
+    token,
+    auth = true,
+    headers: initHeaders,
+    timeoutMs,
+    signal: callerSignal,
+    ...rest
+  } = options;
 
   const headers = new Headers(initHeaders);
   if (!headers.has("Content-Type") && rest.body) {
@@ -48,21 +57,47 @@ export async function apiFetch<T>(
     }
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...rest,
-    headers,
-  });
+  let signal = callerSignal;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let timeoutController: AbortController | undefined;
 
-  const contentType = res.headers.get("content-type");
-  const data = contentType?.includes("application/json")
-    ? await res.json()
-    : await res.text();
-
-  if (!res.ok) {
-    throw new ApiError(extractErrorMessage(data, res.status), res.status, data);
+  if (timeoutMs != null && timeoutMs > 0 && signal == null) {
+    timeoutController = new AbortController();
+    signal = timeoutController.signal;
+    timeoutId = setTimeout(() => timeoutController?.abort(), timeoutMs);
   }
 
-  return data as T;
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...rest,
+      headers,
+      signal,
+    });
+
+    const contentType = res.headers.get("content-type");
+    const data = contentType?.includes("application/json")
+      ? await res.json()
+      : await res.text();
+
+    if (!res.ok) {
+      throw new ApiError(extractErrorMessage(data, res.status), res.status, data);
+    }
+
+    return data as T;
+  } catch (error) {
+    if (
+      timeoutController?.signal.aborted &&
+      error instanceof DOMException &&
+      error.name === "AbortError"
+    ) {
+      throw new ApiError("Request timed out", 408);
+    }
+    throw error;
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
+  }
 }
 
 export function isUnauthorized(error: unknown): boolean {
@@ -240,6 +275,9 @@ export const monitoringApi = {
 
 export const SERVER_LLM_MODEL_ID = "gemma2:2b";
 
+/** Server Ollama analyze can take 25–70s+ (cold start); keep above backend LLM latency. */
+export const SERVER_LLM_ANALYZE_TIMEOUT_MS = 90_000;
+
 export type InfluencerAnalysisResult = {
   overall_score: number;
   engagement_score: number;
@@ -250,16 +288,20 @@ export type InfluencerAnalysisResult = {
 };
 
 export const llmApi = {
-  analyze: (payload: {
-    influencer_name: string;
-    platform: string;
-    notes?: string;
-  }) =>
+  analyze: (
+    payload: {
+      influencer_name: string;
+      platform: string;
+      notes?: string;
+    },
+    timeoutMs: number = SERVER_LLM_ANALYZE_TIMEOUT_MS,
+  ) =>
     apiFetch<{ result: InfluencerAnalysisResult; raw_output: string }>(
       "/api/v1/llm/analyze",
       {
         method: "POST",
         body: JSON.stringify(payload),
+        timeoutMs,
       },
     ),
 };

@@ -1,0 +1,14 @@
+FROM ./gemma-influencer.gguf
+
+TEMPLATE """{{ if .System }}<start_of_turn>system
+{{ .System }}<end_of_turn>
+{{ end }}<start_of_turn>user
+Analyze this influencer profile and provide scores.
+{{ .Prompt }}<end_of_turn>
+<start_of_turn>model
+"""
+
+PARAMETER stop "<end_of_turn>"
+PARAMETER stop "}\n"
+PARAMETER temperature 0.2
+PARAMETER num_predict 80

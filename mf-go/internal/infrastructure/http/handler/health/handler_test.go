@@ -17,7 +17,7 @@ func (failingPinger) Ping(context.Context) error {
 }
 
 func TestReadiness_DoesNotExposeInternalErrors(t *testing.T) {
-	handler := &Handler{db: failingPinger{}}
+	handler := &Handler{db: failingPinger{}, instanceID: "test-instance"}
 
 	req := httptest.NewRequest(http.MethodGet, "/health/ready", nil)
 	rec := httptest.NewRecorder()

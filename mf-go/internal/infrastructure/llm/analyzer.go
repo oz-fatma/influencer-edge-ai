@@ -18,6 +18,9 @@ import (
 
 const systemPrompt = "You are an expert influencer marketing analyst. ONLY return valid JSON. No markdown, no explanation, no code fences."
 
+// ollamaHTTPTimeout allows for fine-tuned model cold start (first load into memory).
+const ollamaHTTPTimeout = 300 * time.Second
+
 // LLMRequestWriter persists outbound LLM call metadata (model, prompt size, latency, success).
 type LLMRequestWriter interface {
 	Insert(ctx context.Context, modelName string, promptLength int, durationMs int64, success bool) error
@@ -62,10 +65,20 @@ func NewAnalyzer(cfg config.LLMConfig, requestLog LLMRequestWriter) *Analyzer {
 		baseURL: strings.TrimRight(cfg.BaseURL, "/"),
 		model:   cfg.Model,
 		client: &http.Client{
-			Timeout: cfg.Timeout,
+			Timeout: resolveHTTPTimeout(cfg),
 		},
 		requestLog: requestLog,
 	}
+}
+
+func resolveHTTPTimeout(cfg config.LLMConfig) time.Duration {
+	if cfg.Timeout <= 0 {
+		return ollamaHTTPTimeout
+	}
+	if cfg.Timeout < ollamaHTTPTimeout {
+		return ollamaHTTPTimeout
+	}
+	return cfg.Timeout
 }
 
 func (a *Analyzer) Model() string {
@@ -95,7 +108,7 @@ func (a *Analyzer) Analyze(ctx context.Context, name, platform, notes string) (*
 			},
 		},
 		Temperature: 0.1,
-		MaxTokens:   700,
+		MaxTokens:   100,
 	}
 
 	body, err := json.Marshal(payload)
@@ -221,6 +234,49 @@ Notes: %s`, fewShotExample, name, platform, trimmedNotes)
 
 var jsonObjectPattern = regexp.MustCompile(`\{[\s\S]*\}`)
 
+// extractFirstJSONObject returns the first balanced {...} block in text.
+// Trailing model noise (repeated JSON, explanations) after the closing brace is ignored.
+func extractFirstJSONObject(text string) string {
+	start := strings.Index(text, "{")
+	if start < 0 {
+		return ""
+	}
+
+	depth := 0
+	inString := false
+	escape := false
+	for i := start; i < len(text); i++ {
+		c := text[i]
+		if inString {
+			if escape {
+				escape = false
+				continue
+			}
+			if c == '\\' {
+				escape = true
+				continue
+			}
+			if c == '"' {
+				inString = false
+			}
+			continue
+		}
+
+		switch c {
+		case '"':
+			inString = true
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return text[start : i+1]
+			}
+		}
+	}
+	return ""
+}
+
 func parseAnalysisJSON(raw string) (*AnalysisResult, error) {
 	for _, candidate := range collectJSONCandidates(raw) {
 		var parsed map[string]any
@@ -234,14 +290,19 @@ func parseAnalysisJSON(raw string) (*AnalysisResult, error) {
 
 func collectJSONCandidates(raw string) []string {
 	stripped := stripCodeFences(raw)
-	fromBraces := extractJSONObject(stripped)
-	if fromBraces == "" {
-		fromBraces = extractJSONObject(raw)
+	firstObject := extractFirstJSONObject(stripped)
+	if firstObject == "" {
+		firstObject = extractFirstJSONObject(raw)
+	}
+	// Legacy greedy match fallback (e.g. deeply nested edge cases).
+	greedyObject := extractJSONObjectGreedy(stripped)
+	if greedyObject == "" {
+		greedyObject = extractJSONObjectGreedy(raw)
 	}
 
 	seen := make(map[string]struct{})
 	var out []string
-	for _, c := range []string{stripped, fromBraces, strings.TrimSpace(raw)} {
+	for _, c := range []string{firstObject, stripped, greedyObject, strings.TrimSpace(raw)} {
 		if c == "" {
 			continue
 		}
@@ -262,9 +323,8 @@ func stripCodeFences(text string) string {
 	return strings.TrimSpace(text)
 }
 
-func extractJSONObject(text string) string {
-	match := jsonObjectPattern.FindString(text)
-	return match
+func extractJSONObjectGreedy(text string) string {
+	return jsonObjectPattern.FindString(text)
 }
 
 func normalizeParsed(parsed map[string]any) (*AnalysisResult, error) {

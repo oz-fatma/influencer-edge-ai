@@ -81,7 +81,7 @@ func New(deps Dependencies) *chi.Mux {
 	r.Use(cors.Handler(middleware.CORSOptions(deps.CORSAllowedOrigins)))
 
 	// Health endpoints
-	healthHandler := health.NewHandler(deps.DB, deps.Redis)
+	healthHandler := health.NewHandler(deps.DB, deps.Redis, health.ResolveInstanceID())
 	r.Get("/health/live", healthHandler.Liveness)
 	r.Get("/health/ready", healthHandler.Readiness)
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/masterfabric-go/masterfabric/internal/shared/response"
@@ -13,8 +14,9 @@ import (
 
 // Handler provides health check endpoints.
 type Handler struct {
-	db    dbPinger
-	redis redisPinger
+	db         dbPinger
+	redis      redisPinger
+	instanceID string
 }
 
 type dbPinger interface {
@@ -26,7 +28,7 @@ type redisPinger interface {
 }
 
 // NewHandler creates a new health handler.
-func NewHandler(db *pgxpool.Pool, redis *redis.Client) *Handler {
+func NewHandler(db *pgxpool.Pool, redis *redis.Client, instanceID string) *Handler {
 	var dbP dbPinger
 	if db != nil {
 		dbP = db
@@ -35,7 +37,10 @@ func NewHandler(db *pgxpool.Pool, redis *redis.Client) *Handler {
 	if redis != nil {
 		redisP = redis
 	}
-	return &Handler{db: dbP, redis: redisP}
+	if strings.TrimSpace(instanceID) == "" {
+		instanceID = ResolveInstanceID()
+	}
+	return &Handler{db: dbP, redis: redisP, instanceID: instanceID}
 }
 
 // HealthResponse is the JSON structure for health checks.
@@ -46,7 +51,11 @@ type HealthResponse struct {
 
 // Liveness returns 200 if the server is alive.
 func (h *Handler) Liveness(w http.ResponseWriter, r *http.Request) {
-	response.JSON(w, http.StatusOK, map[string]string{"status": "alive"})
+	w.Header().Set("X-Instance-ID", h.instanceID)
+	response.JSON(w, http.StatusOK, map[string]string{
+		"status":      "alive",
+		"instance_id": h.instanceID,
+	})
 }
 
 // Readiness checks the database and cache connectivity.

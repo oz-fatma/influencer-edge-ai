@@ -47,6 +47,60 @@ func TestParseAnalysisJSON_invalid(t *testing.T) {
 	}
 }
 
+func TestParseAnalysisJSON_ignoresTrailingNoise(t *testing.T) {
+	raw := `{"overall_score":70,"engagement_score":70,"audience_score":70,"brand_fit_score":70,"summary":"OK","insights":["One insight"]}` +
+		"\n\nAs you can see, this influencer shows strong potential. Let me explain further..."
+	result, err := parseAnalysisJSON(raw)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Summary != "OK" {
+		t.Fatalf("summary = %q", result.Summary)
+	}
+	if result.OverallScore != 70 {
+		t.Fatalf("overall_score = %v", result.OverallScore)
+	}
+}
+
+func TestParseAnalysisJSON_usesFirstCompleteObjectWhenRepeated(t *testing.T) {
+	raw := `{"overall_score":70,"engagement_score":70,"audience_score":70,"brand_fit_score":70,"summary":"First","insights":["A"]}` +
+		` {"overall_score":99,"engagement_score":99,"audience_score":99,"brand_fit_score":99,"summary":"Second","insights":["B"]}`
+	result, err := parseAnalysisJSON(raw)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Summary != "First" {
+		t.Fatalf("summary = %q, want First", result.Summary)
+	}
+	if result.OverallScore != 70 {
+		t.Fatalf("overall_score = %v, want 70", result.OverallScore)
+	}
+}
+
+func TestExtractFirstJSONObject_respectsStringsWithBraces(t *testing.T) {
+	raw := `{"summary":"Use {brace} in text","insights":["ok"]} trailing`
+	got := extractFirstJSONObject(raw)
+	want := `{"summary":"Use {brace} in text","insights":["ok"]}`
+	if got != want {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+}
+
+func TestResolveHTTPTimeout(t *testing.T) {
+	if got := resolveHTTPTimeout(config.LLMConfig{}); got != ollamaHTTPTimeout {
+		t.Fatalf("zero config timeout = %v, want %v", got, ollamaHTTPTimeout)
+	}
+	if got := resolveHTTPTimeout(config.LLMConfig{Timeout: 60 * time.Second}); got != ollamaHTTPTimeout {
+		t.Fatalf("60s config timeout = %v, want %v", got, ollamaHTTPTimeout)
+	}
+	if got := resolveHTTPTimeout(config.LLMConfig{Timeout: 300 * time.Second}); got != 300*time.Second {
+		t.Fatalf("300s config timeout = %v", got)
+	}
+	if got := resolveHTTPTimeout(config.LLMConfig{Timeout: 600 * time.Second}); got != 600*time.Second {
+		t.Fatalf("600s config timeout = %v", got)
+	}
+}
+
 func TestNewAnalyzer_nilWhenNoBaseURL(t *testing.T) {
 	if NewAnalyzer(config.LLMConfig{Timeout: time.Minute}, nil) != nil {
 		t.Fatal("expected nil analyzer")
