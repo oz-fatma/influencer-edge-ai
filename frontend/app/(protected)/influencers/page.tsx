@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   handleUnauthorizedRedirect,
   isUnauthorized,
@@ -18,27 +18,38 @@ export default function InfluencersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const loadScores = useCallback(async () => {
+  async function loadScores() {
     const data = await scoresApi.list();
     setScores(data.scores ?? []);
-  }, []);
+  }
 
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
       try {
-        await loadScores();
+        const data = await scoresApi.list();
+        if (cancelled) return;
+        setScores(data.scores ?? []);
       } catch (err) {
+        if (cancelled) return;
         if (isUnauthorized(err)) {
           handleUnauthorizedRedirect("/influencers");
           return;
         }
         setError("Failed to load scores. Please try again.");
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
+
     load();
-  }, [loadScores]);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!successMessage) return;

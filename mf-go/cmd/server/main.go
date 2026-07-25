@@ -17,6 +17,7 @@ import (
 	infraAuth "github.com/masterfabric-go/masterfabric/internal/infrastructure/auth"
 	apimgmtHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/apimanagement"
 	auditHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/audit"
+	adminHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/admin"
 	influencerHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/influencer"
 	mcpHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/mcp"
 	iamHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/iam"
@@ -31,12 +32,14 @@ import (
 	pgApimgmt "github.com/masterfabric-go/masterfabric/internal/infrastructure/postgres/apimanagement"
 	pgAudit "github.com/masterfabric-go/masterfabric/internal/infrastructure/postgres/audit"
 	pgInfluencer "github.com/masterfabric-go/masterfabric/internal/infrastructure/postgres/influencer"
+	pgAdmin "github.com/masterfabric-go/masterfabric/internal/infrastructure/postgres/admin"
 	pgIam "github.com/masterfabric-go/masterfabric/internal/infrastructure/postgres/iam"
 	pgObservability "github.com/masterfabric-go/masterfabric/internal/infrastructure/postgres/observability"
 	pgTenant "github.com/masterfabric-go/masterfabric/internal/infrastructure/postgres/tenant"
 
 	// Application use cases
 	apimgmtUC "github.com/masterfabric-go/masterfabric/internal/application/apimanagement/usecase"
+	adminUC "github.com/masterfabric-go/masterfabric/internal/application/admin/usecase"
 	influencerUC "github.com/masterfabric-go/masterfabric/internal/application/influencer/usecase"
 	iamUC "github.com/masterfabric-go/masterfabric/internal/application/iam/usecase"
 	realtimeUC "github.com/masterfabric-go/masterfabric/internal/application/realtime/usecase"
@@ -244,6 +247,8 @@ func buildDependencies(
 	userRepo := pgIam.NewUserRepo(db, cfg.Database.Schema)
 	requestLogRepo := pgObservability.NewRequestLogRepository(db, cfg.Database.Schema)
 	llmRequestRepo := pgObservability.NewLLMRequestRepository(db, cfg.Database.Schema)
+	llmConfigRepo := pgAdmin.NewLLMConfigRepo(db, cfg.Database.Schema)
+	adminRepo := pgAdmin.NewAdminRepo(db, cfg.Database.Schema)
 	deps.RequestLogWriter = requestLogRepo
 	roleRepo := pgIam.NewRoleRepo(db)
 	orgRepo := pgTenant.NewOrgRepo(db)
@@ -265,7 +270,7 @@ func buildDependencies(
 
 	// --- Use cases (with event bus for domain event publishing) ---
 	registerUC := iamUC.NewRegisterUseCase(userRepo, jwtService, eventBus)
-	loginUC := iamUC.NewLoginUseCase(userRepo, jwtService)
+	loginUC := iamUC.NewLoginUseCase(userRepo, jwtService, adminRepo)
 	assignRoleUC := iamUC.NewAssignRoleUseCase(roleRepo, rbacService, eventBus)
 	createOrgUC := tenantUC.NewCreateOrgUseCase(orgRepo, eventBus)
 	createWorkspaceUC := tenantUC.NewCreateWorkspaceUseCase(workspaceRepo, orgRepo, eventBus)
@@ -296,7 +301,8 @@ func buildDependencies(
 	})
 
 	// --- Handlers ---
-	deps.IAMHandler = iamHandler.NewHandler(registerUC, loginUC, assignRoleUC, userRepo)
+	deps.IAMHandler = iamHandler.NewHandler(registerUC, loginUC, assignRoleUC, userRepo, adminRepo)
+	deps.AdminRepo = adminRepo
 	deps.TenantHandler = tenantHandler.NewHandler(
 		createOrgUC,
 		createAppUC,
@@ -313,7 +319,8 @@ func buildDependencies(
 	scoreRepo := pgInfluencer.NewScoreRepo(db)
 	analysisRepo := pgInfluencer.NewAnalysisRepo(db)
 	llmMetricsStore := infraRedis.NewLLMMetricsStore(redisClient)
-	llmAnalyzer := infraLLM.NewAnalyzer(cfg.LLM, llmRequestRepo)
+	llmConfigAdapter := infraLLM.NewConfigAdapter(llmConfigRepo)
+	llmAnalyzer := infraLLM.NewAnalyzer(cfg.LLM, llmRequestRepo, llmConfigAdapter)
 	if llmAnalyzer != nil {
 		log.Info("LLM proxy enabled", "base_url", cfg.LLM.BaseURL, "model", cfg.LLM.Model)
 	} else {
@@ -324,6 +331,9 @@ func buildDependencies(
 		log.Info("MCP adapter enabled", "model", cfg.MCP.Model, "endpoint", "/api/v1/mcp/request")
 	}
 	deps.MCPHandler = mcpHandler.NewHandler(mcpService)
+	adminConfigService := adminUC.NewConfigService(llmConfigRepo)
+	adminLogsService := adminUC.NewLogsService(llmRequestRepo)
+	deps.AdminHandler = adminHandler.NewHandler(adminConfigService, adminLogsService)
 	deps.InfluencerHandler = influencerHandler.NewHandler(
 		influencerUC.NewScoreService(scoreRepo),
 		influencerUC.NewAnalysisService(analysisRepo, scoreRepo),

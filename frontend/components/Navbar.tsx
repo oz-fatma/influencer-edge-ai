@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { clearAuth } from "@/lib/auth";
+import { useEffect, useState } from "react";
+import { authApi, isUnauthorized } from "@/lib/api";
+import { clearAuth, getIsAdmin, setIsAdmin } from "@/lib/auth";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -16,6 +17,27 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isAdmin, setIsAdminState] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setIsAdminState(getIsAdmin());
+    authApi
+      .me()
+      .then((me) => {
+        if (cancelled) return;
+        setIsAdmin(me.is_admin);
+        setIsAdminState((prev) => (prev === me.is_admin ? prev : me.is_admin));
+      })
+      .catch((err) => {
+        if (cancelled || isUnauthorized(err)) return;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -26,6 +48,10 @@ export default function Navbar() {
       setLoggingOut(false);
     }
   }
+
+  const items = isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin" }]
+    : navItems;
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--surface)]/80 backdrop-blur-xl">
@@ -41,7 +67,7 @@ export default function Navbar() {
           </Link>
 
           <nav className="hidden items-center gap-1 sm:flex">
-            {navItems.map((item) => {
+            {items.map((item) => {
               const active = pathname === item.href;
               return (
                 <Link

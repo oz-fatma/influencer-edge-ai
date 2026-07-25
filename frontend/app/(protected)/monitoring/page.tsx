@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   handleUnauthorizedRedirect,
   isUnauthorized,
@@ -17,32 +17,39 @@ export default function MonitoringPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const loadStats = useCallback(async (isInitial = false) => {
-    try {
-      const data = await monitoringApi.getStats();
-      setStats(data);
-      setError(null);
-      setLastUpdated(new Date());
-    } catch (err) {
-      if (isUnauthorized(err)) {
-        handleUnauthorizedRedirect("/monitoring");
-        return;
-      }
-      if (isInitial) {
-        setError("Failed to load monitoring data.");
-      }
-    } finally {
-      if (isInitial) {
-        setLoading(false);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadStats(isInitial = false) {
+      try {
+        const data = await monitoringApi.getStats();
+        if (cancelled) return;
+        setStats(data);
+        setError(null);
+        setLastUpdated(new Date());
+      } catch (err) {
+        if (cancelled) return;
+        if (isUnauthorized(err)) {
+          handleUnauthorizedRedirect("/monitoring");
+          return;
+        }
+        if (isInitial) {
+          setError("Failed to load monitoring data.");
+        }
+      } finally {
+        if (!cancelled && isInitial) {
+          setLoading(false);
+        }
       }
     }
-  }, []);
 
-  useEffect(() => {
     loadStats(true);
     const interval = setInterval(() => loadStats(false), POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [loadStats]);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   if (loading) {
     return (

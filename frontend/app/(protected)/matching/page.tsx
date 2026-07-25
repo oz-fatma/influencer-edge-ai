@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   analysesApi,
   ApiError,
@@ -98,6 +99,7 @@ function shouldFallbackToWebLLM(error: unknown): boolean {
 }
 
 export default function MatchingPage() {
+  const pathname = usePathname();
   const [scores, setScores] = useState<InfluencerScore[]>([]);
   const [analyses, setAnalyses] = useState<InfluencerAnalysis[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -117,43 +119,46 @@ export default function MatchingPage() {
   const [modelProgress, setModelProgress] = useState<number | null>(null);
   const [modelProgressText, setModelProgressText] = useState("");
 
-  const loadData = useCallback(async () => {
-    const [scoresData, analysesData] = await Promise.all([
-      scoresApi.list(),
-      analysesApi.list(),
-    ]);
-    const list = scoresData.scores ?? [];
-    setScores(list);
-    setAnalyses(analysesData.analyses ?? []);
-    setSelectedId((prev) => {
-      if (prev !== null && list.some((s) => s.id === prev)) return prev;
-      return list.length > 0 ? list[0].id : null;
-    });
-  }, []);
-
   useEffect(() => {
-    async function load() {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    async function loadData() {
       try {
-        await loadData();
+        const [scoresData, analysesData] = await Promise.all([
+          scoresApi.list(),
+          analysesApi.list(),
+        ]);
+        if (cancelled) return;
+
+        const list = scoresData.scores ?? [];
+        setScores(list);
+        setAnalyses(analysesData.analyses ?? []);
+        setSelectedId((prev) => {
+          if (prev !== null && list.some((s) => s.id === prev)) return prev;
+          return list.length > 0 ? list[0].id : null;
+        });
+        setError(null);
       } catch (err) {
+        if (cancelled) return;
         if (isUnauthorized(err)) {
           handleUnauthorizedRedirect("/matching");
           return;
         }
         setError("Failed to load data. Please try again.");
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
-    load();
-  }, [loadData]);
 
-  useEffect(() => {
-    const syncEngineBusy = () => setEngineBusy(isWebLLMLoading());
-    syncEngineBusy();
-    const id = window.setInterval(syncEngineBusy, 300);
-    return () => window.clearInterval(id);
-  }, []);
+    loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   const selected = useMemo(
     () => scores.find((s) => s.id === selectedId) ?? null,
@@ -241,6 +246,7 @@ export default function MatchingPage() {
       },
     );
 
+    setEngineBusy(false);
     setModelProgress(null);
     await persistAnalysis(result, rawOutput, "web-llm", WEBLLM_MODEL_ID, startTime);
   }
@@ -372,14 +378,6 @@ export default function MatchingPage() {
     return "Analyzing in browser...";
   })();
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24 text-[var(--muted)]">
-        Loading...
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-6 py-8 text-center text-red-400">
@@ -389,7 +387,12 @@ export default function MatchingPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
+      {loading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-[var(--background)]/70 backdrop-blur-sm">
+          <p className="text-[var(--muted)]">Loading...</p>
+        </div>
+      )}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">AI Matching Panel</h1>
         <p className="mt-1 text-[var(--muted)]">

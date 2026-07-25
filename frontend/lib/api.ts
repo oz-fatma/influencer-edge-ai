@@ -1,7 +1,9 @@
-import { clearAuth, type AuthUser } from "./auth";
+import { clearAuth, getToken, type AuthUser } from "./auth";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081";
+
+let unauthorizedRedirectInFlight = false;
 
 export class ApiError extends Error {
   constructor(
@@ -51,7 +53,7 @@ export async function apiFetch<T>(
   if (auth) {
     const authToken =
       token ??
-      (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+      (typeof window !== "undefined" ? getToken() : null);
     if (authToken) {
       headers.set("Authorization", `Bearer ${authToken}`);
     }
@@ -105,11 +107,13 @@ export function isUnauthorized(error: unknown): boolean {
 }
 
 export function handleUnauthorizedRedirect(currentPath?: string) {
+  if (typeof window === "undefined" || unauthorizedRedirectInFlight) return;
+  unauthorizedRedirectInFlight = true;
   clearAuth();
   const params = currentPath
     ? `?redirect=${encodeURIComponent(currentPath)}`
     : "";
-  window.location.href = `/login${params}`;
+  window.location.replace(`/login${params}`);
 }
 
 export type LoginPayload = { email: string; password: string };
@@ -130,6 +134,12 @@ export type UserResponse = {
 export type LoginResponse = {
   token: string;
   user: UserResponse;
+  is_admin?: boolean;
+};
+
+export type MeResponse = {
+  user: UserResponse;
+  is_admin: boolean;
 };
 
 export function toAuthUser(user: UserResponse): AuthUser {
@@ -155,6 +165,8 @@ export const authApi = {
       body: JSON.stringify(payload),
       auth: false,
     }),
+
+  me: () => apiFetch<MeResponse>("/api/v1/auth/me"),
 };
 
 export type InfluencerScore = {
@@ -316,4 +328,44 @@ export const llmApi = {
         timeoutMs,
       },
     ),
+};
+
+export type LLMConfig = {
+  id: string;
+  system_prompt: string;
+  temperature: number;
+  max_tokens: number;
+  model: string;
+  updated_at: string;
+  updated_by?: string;
+};
+
+export type LLMLogEntry = {
+  model_name: string;
+  duration_ms: number;
+  success: boolean;
+  created_at: string;
+};
+
+export type UpdateLLMConfigPayload = {
+  system_prompt: string;
+  temperature: number;
+  max_tokens: number;
+  model: string;
+};
+
+export const adminApi = {
+  getLLMConfig: () => apiFetch<LLMConfig>("/api/v1/admin/llm-config"),
+
+  updateLLMConfig: (payload: UpdateLLMConfigPayload) =>
+    apiFetch<LLMConfig>("/api/v1/admin/llm-config", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  getLLMLogs: (limit = 50) =>
+    apiFetch<{ logs: LLMLogEntry[] }>(`/api/v1/admin/llm-logs?limit=${limit}`),
+
+  getAllowedModels: () =>
+    apiFetch<{ models: string[] }>("/api/v1/admin/llm-models"),
 };

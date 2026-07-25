@@ -90,7 +90,7 @@ func TestHandleMCPRequest_analyzeInfluencerSuccess(t *testing.T) {
 		BaseURL: mockLLM.URL,
 		Model:   "gemma-influencer-ft",
 		Timeout: time.Minute,
-	}, nil)
+	}, nil, nil)
 	svc := NewService(analyzer, "gemma-influencer-ft")
 
 	result, err := svc.HandleMCPRequest(context.Background(), MCPPayload{

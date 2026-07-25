@@ -102,7 +102,7 @@ func TestResolveHTTPTimeout(t *testing.T) {
 }
 
 func TestNewAnalyzer_nilWhenNoBaseURL(t *testing.T) {
-	if NewAnalyzer(config.LLMConfig{Timeout: time.Minute}, nil) != nil {
+	if NewAnalyzer(config.LLMConfig{Timeout: time.Minute}, nil, nil) != nil {
 		t.Fatal("expected nil analyzer")
 	}
 }
@@ -144,7 +144,7 @@ func TestAnalyze_recordsSuccessfulLLMRequest(t *testing.T) {
 		BaseURL: srv.URL,
 		Model:   "gemma2:2b",
 		Timeout: 5 * time.Second,
-	}, writer)
+	}, writer, nil)
 
 	_, _, err := analyzer.Analyze(context.Background(), "Ada", "instagram", "tech")
 	if err != nil {
@@ -196,7 +196,7 @@ func TestAnalyze_recordsFailedLLMRequest(t *testing.T) {
 		BaseURL: srv.URL,
 		Model:   "gemma2:2b",
 		Timeout: 5 * time.Second,
-	}, writer)
+	}, writer, nil)
 
 	_, _, err := analyzer.Analyze(context.Background(), "Ada", "instagram", "tech")
 	if err == nil {

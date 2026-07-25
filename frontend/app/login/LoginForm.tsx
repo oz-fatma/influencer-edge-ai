@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { setAuth } from "@/lib/auth";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { clearAuth, getToken, setAuth, syncAuthCookie } from "@/lib/auth";
 import { ApiError, authApi, toAuthUser } from "@/lib/api";
 
 type Mode = "login" | "register";
@@ -15,7 +15,6 @@ function safeRedirect(path: string | null): string {
 }
 
 export default function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = safeRedirect(searchParams.get("redirect"));
 
@@ -26,6 +25,23 @@ export default function LoginForm() {
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const restoreAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (restoreAttemptedRef.current) return;
+    restoreAttemptedRef.current = true;
+
+    const token = getToken();
+    if (!token) return;
+
+    if (!syncAuthCookie()) {
+      clearAuth();
+      setError("Session cookie could not be set. Please sign in again.");
+      return;
+    }
+
+    window.location.replace(redirect);
+  }, [redirect]);
 
   function validate(): string | null {
     if (!email.trim()) return "Email is required";
@@ -63,8 +79,13 @@ export default function LoginForm() {
       }
 
       const response = await authApi.login(payload);
-      setAuth(response.token, toAuthUser(response.user));
-      router.push(redirect);
+      setAuth(response.token, toAuthUser(response.user), response.is_admin === true);
+      if (!syncAuthCookie()) {
+        setError("Signed in, but the session cookie could not be set. Try again or clear site data.");
+        clearAuth();
+        return;
+      }
+      window.location.replace(redirect);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

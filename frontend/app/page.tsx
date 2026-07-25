@@ -3,7 +3,9 @@ import { cookies } from "next/headers";
 
 export default async function Home() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
+  const hasSession =
+    cookieStore.get("session")?.value === "1" ||
+    Boolean(cookieStore.get("token")?.value?.trim());
 
-  redirect(token ? "/dashboard" : "/login");
+  redirect(hasSession ? "/dashboard" : "/login");
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/masterfabric-go/masterfabric/internal/shared/config"
 )
 
-const systemPrompt = "You are an expert influencer marketing analyst. ONLY return valid JSON. No markdown, no explanation, no code fences."
+const defaultSystemPrompt = "You are an expert influencer marketing analyst. ONLY return valid JSON. No markdown, no explanation, no code fences."
 
 // ollamaHTTPTimeout allows for fine-tuned model cold start (first load into memory).
 const ollamaHTTPTimeout = 300 * time.Second
@@ -25,6 +25,19 @@ const ollamaHTTPTimeout = 300 * time.Second
 // LLMRequestWriter persists outbound LLM call metadata (model, prompt size, latency, success).
 type LLMRequestWriter interface {
 	Insert(ctx context.Context, modelName string, promptLength int, durationMs int64, success bool) error
+}
+
+// RuntimeLLMSettings holds per-request LLM parameters (from admin config or defaults).
+type RuntimeLLMSettings struct {
+	SystemPrompt string
+	Temperature  float64
+	MaxTokens    int
+	Model        string
+}
+
+// LLMConfigReader loads runtime LLM settings from persistent admin config.
+type LLMConfigReader interface {
+	GetRuntimeSettings(ctx context.Context) (RuntimeLLMSettings, error)
 }
 
 const fewShotExample = `{
@@ -52,13 +65,14 @@ type AnalysisResult struct {
 
 // Analyzer calls an OpenAI-compatible LLM server (Ollama via /v1/chat/completions).
 type Analyzer struct {
-	baseURL     string
-	model       string
-	client      *http.Client
-	requestLog  LLMRequestWriter
+	baseURL    string
+	model      string
+	client     *http.Client
+	requestLog LLMRequestWriter
+	config     LLMConfigReader
 }
 
-func NewAnalyzer(cfg config.LLMConfig, requestLog LLMRequestWriter) *Analyzer {
+func NewAnalyzer(cfg config.LLMConfig, requestLog LLMRequestWriter, configReader LLMConfigReader) *Analyzer {
 	if cfg.BaseURL == "" {
 		return nil
 	}
@@ -69,6 +83,7 @@ func NewAnalyzer(cfg config.LLMConfig, requestLog LLMRequestWriter) *Analyzer {
 			Timeout: resolveHTTPTimeout(cfg),
 		},
 		requestLog: requestLog,
+		config:     configReader,
 	}
 }
 
@@ -86,34 +101,61 @@ func (a *Analyzer) Model() string {
 	return a.model
 }
 
+func (a *Analyzer) resolveSettings(ctx context.Context) RuntimeLLMSettings {
+	defaults := RuntimeLLMSettings{
+		SystemPrompt: defaultSystemPrompt,
+		Temperature:  0.1,
+		MaxTokens:    100,
+		Model:        a.model,
+	}
+	if a.config == nil {
+		return defaults
+	}
+	settings, err := a.config.GetRuntimeSettings(ctx)
+	if err != nil {
+		return defaults
+	}
+	if settings.SystemPrompt == "" {
+		settings.SystemPrompt = defaults.SystemPrompt
+	}
+	if settings.Model == "" {
+		settings.Model = defaults.Model
+	}
+	if settings.MaxTokens <= 0 {
+		settings.MaxTokens = defaults.MaxTokens
+	}
+	return settings
+}
+
 func (a *Analyzer) Analyze(ctx context.Context, name, platform, notes string) (*AnalysisResult, string, error) {
 	return a.AnalyzeWithProfile(ctx, name, platform, dto.InfluencerProfile{Notes: notes}, notes)
 }
 
 func (a *Analyzer) AnalyzeWithProfile(ctx context.Context, name, platform string, profile dto.InfluencerProfile, legacyNotes string) (*AnalysisResult, string, error) {
+	settings := a.resolveSettings(ctx)
 	userPrompt := buildPrompt(name, platform, dto.BuildAnalyzePrompt(profile, legacyNotes))
-	promptLength := len(systemPrompt) + len(userPrompt)
+	promptLength := len(settings.SystemPrompt) + len(userPrompt)
 
 	start := time.Now()
 	success := false
 	defer func() {
-		a.recordRequest(promptLength, time.Since(start).Milliseconds(), success)
+		a.recordRequest(settings.Model, promptLength, time.Since(start).Milliseconds(), success)
 	}()
 
 	payload := chatCompletionRequest{
-		Model: a.model,
+		Model: settings.Model,
 		Messages: []chatMessage{
 			{
 				Role:    "system",
-				Content: systemPrompt,
+				Content: settings.SystemPrompt,
 			},
 			{
 				Role:    "user",
 				Content: userPrompt,
 			},
 		},
-		Temperature: 0.1,
-		MaxTokens:   100,
+		Temperature: settings.Temperature,
+		MaxTokens:   settings.MaxTokens,
 	}
 
 	body, err := json.Marshal(payload)
@@ -160,11 +202,13 @@ func (a *Analyzer) AnalyzeWithProfile(ctx context.Context, name, platform string
 	return result, rawOutput, nil
 }
 
-func (a *Analyzer) recordRequest(promptLength int, durationMs int64, success bool) {
+func (a *Analyzer) recordRequest(model string, promptLength int, durationMs int64, success bool) {
 	if a == nil || a.requestLog == nil {
 		return
 	}
-	model := a.model
+	if model == "" {
+		model = a.model
+	}
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()

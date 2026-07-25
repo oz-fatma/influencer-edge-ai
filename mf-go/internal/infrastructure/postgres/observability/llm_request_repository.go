@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	adminModel "github.com/masterfabric-go/masterfabric/internal/domain/admin/model"
 	"github.com/masterfabric-go/masterfabric/internal/shared/database"
 )
 
@@ -43,4 +44,30 @@ func (r *LLMRequestRepository) Insert(
 		time.Now().UTC(),
 	)
 	return err
+}
+
+// ListRecent returns the most recent LLM request log entries.
+func (r *LLMRequestRepository) ListRecent(ctx context.Context, limit int) ([]adminModel.LLMRequestLog, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	rows, err := r.db.Query(ctx,
+		fmt.Sprintf(`SELECT model_name, duration_ms, success, created_at
+		 FROM %s ORDER BY created_at DESC LIMIT $1`, r.llmRequestsTable),
+		limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []adminModel.LLMRequestLog
+	for rows.Next() {
+		var item adminModel.LLMRequestLog
+		if err := rows.Scan(&item.ModelName, &item.DurationMs, &item.Success, &item.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	return out, rows.Err()
 }

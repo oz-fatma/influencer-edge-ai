@@ -22,8 +22,9 @@ type LoginRequest struct {
 
 // LoginResponse is the output for successful login.
 type LoginResponse struct {
-	Token string   `json:"token"`
-	User  UserInfo `json:"user"`
+	Token   string   `json:"token"`
+	User    UserInfo `json:"user"`
+	IsAdmin bool     `json:"is_admin"`
 }
 
 // UserInfo is a public user representation.
@@ -36,7 +37,11 @@ type UserInfo struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// AssignRoleRequest is the input for assigning a role to a user.
+// MeResponse is the output for GET /auth/me.
+type MeResponse struct {
+	User    UserInfo `json:"user"`
+	IsAdmin bool     `json:"is_admin"`
+}
 type AssignRoleRequest struct {
 	UserID         uuid.UUID  `json:"user_id" validate:"required"`
 	RoleID         uuid.UUID  `json:"role_id" validate:"required"`

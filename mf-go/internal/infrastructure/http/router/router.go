@@ -14,6 +14,7 @@ import (
 	// Handlers
 	apimgmtHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/apimanagement"
 	auditHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/audit"
+	adminHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/admin"
 	"github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/health"
 	iamHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/iam"
 	influencerHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/influencer"
@@ -23,6 +24,7 @@ import (
 
 	// Services & middleware
 	iamService "github.com/masterfabric-go/masterfabric/internal/domain/iam/service"
+	adminRepo "github.com/masterfabric-go/masterfabric/internal/domain/admin/repository"
 	"github.com/masterfabric-go/masterfabric/internal/gateway"
 	"github.com/masterfabric-go/masterfabric/internal/shared/middleware"
 
@@ -58,6 +60,8 @@ type Dependencies struct {
 	InfluencerHandler *influencerHandler.Handler
 	MCPHandler        *mcpHandler.Handler
 	RealtimeHandler   *realtimeHandler.Handler
+	AdminHandler      *adminHandler.Handler
+	AdminRepo         adminRepo.AdminRepository
 
 	// Gateway
 	GatewayPipeline *gateway.Pipeline
@@ -124,6 +128,7 @@ func New(deps Dependencies) *chi.Mux {
 
 			// User routes
 			if deps.IAMHandler != nil {
+				r.Get("/auth/me", deps.IAMHandler.GetMe)
 				r.Get("/me", deps.IAMHandler.GetMe)
 				r.With(maybeRequirePermission(deps.RBACService, "user:read")).Route("/users", func(r chi.Router) {
 					r.Get("/", deps.IAMHandler.ListUsers)
@@ -200,6 +205,16 @@ func New(deps Dependencies) *chi.Mux {
 
 			if deps.MCPHandler != nil {
 				r.Post("/mcp/request", deps.MCPHandler.ProcessRequest)
+			}
+
+			if deps.AdminHandler != nil && deps.AdminRepo != nil {
+				r.Route("/admin", func(r chi.Router) {
+					r.Use(middleware.RequireAdmin(deps.AdminRepo))
+					r.Get("/llm-config", deps.AdminHandler.GetLLMConfig)
+					r.Put("/llm-config", deps.AdminHandler.UpdateLLMConfig)
+					r.Get("/llm-logs", deps.AdminHandler.ListLLMLogs)
+					r.Get("/llm-models", deps.AdminHandler.ListAllowedModels)
+				})
 			}
 
 			// Catch-all handler for managed endpoints (must be last in the group)

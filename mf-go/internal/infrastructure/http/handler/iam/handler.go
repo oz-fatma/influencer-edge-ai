@@ -13,14 +13,16 @@ import (
 	"github.com/masterfabric-go/masterfabric/internal/shared/validator"
 
 	iamRepo "github.com/masterfabric-go/masterfabric/internal/domain/iam/repository"
+	adminRepo "github.com/masterfabric-go/masterfabric/internal/domain/admin/repository"
 )
 
 // Handler provides IAM HTTP handlers.
 type Handler struct {
-	registerUC  *usecase.RegisterUseCase
-	loginUC     *usecase.LoginUseCase
+	registerUC   *usecase.RegisterUseCase
+	loginUC      *usecase.LoginUseCase
 	assignRoleUC *usecase.AssignRoleUseCase
-	userRepo    iamRepo.UserRepository
+	userRepo     iamRepo.UserRepository
+	adminRepo    adminRepo.AdminRepository
 }
 
 // NewHandler creates a new IAM handler.
@@ -29,12 +31,14 @@ func NewHandler(
 	loginUC *usecase.LoginUseCase,
 	assignRoleUC *usecase.AssignRoleUseCase,
 	userRepo iamRepo.UserRepository,
+	adminRepo adminRepo.AdminRepository,
 ) *Handler {
 	return &Handler{
-		registerUC:  registerUC,
-		loginUC:     loginUC,
+		registerUC:   registerUC,
+		loginUC:      loginUC,
 		assignRoleUC: assignRoleUC,
-		userRepo:    userRepo,
+		userRepo:     userRepo,
+		adminRepo:    adminRepo,
 	}
 }
 
@@ -88,7 +92,7 @@ func (h *Handler) AssignRole(w http.ResponseWriter, r *http.Request) {
 	response.NoContent(w)
 }
 
-// GetMe returns the current authenticated user.
+// GetMe returns the current authenticated user with admin flag.
 func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.UserIDFromContext(r.Context())
 	if !ok {
@@ -102,13 +106,21 @@ func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusOK, dto.UserInfo{
-		ID:        user.ID,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Status:    string(user.Status),
-		CreatedAt: user.CreatedAt,
+	isAdmin := false
+	if h.adminRepo != nil {
+		isAdmin, _ = h.adminRepo.IsAdmin(r.Context(), userID)
+	}
+
+	response.JSON(w, http.StatusOK, dto.MeResponse{
+		User: dto.UserInfo{
+			ID:        user.ID,
+			Email:     user.Email,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Status:    string(user.Status),
+			CreatedAt: user.CreatedAt,
+		},
+		IsAdmin: isAdmin,
 	})
 }
 
