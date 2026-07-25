@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/masterfabric-go/masterfabric/internal/domain/influencer/model"
 	domainRepo "github.com/masterfabric-go/masterfabric/internal/domain/influencer/repository"
@@ -23,6 +24,51 @@ func NewScoreRepo(db *pgxpool.Pool) *ScoreRepo {
 
 var _ domainRepo.ScoreRepository = (*ScoreRepo)(nil)
 
+const scoreSelectColumns = `
+	id, user_id, influencer_name, platform,
+	overall_score, engagement_score, audience_score, brand_fit_score,
+	raw_payload, notes,
+	niche, audience_geo, audience_demo, follower_range, engagement_rate, content_formats,
+	created_at, updated_at`
+
+func scanScore(row pgx.Row) (model.InfluencerScore, error) {
+	var s model.InfluencerScore
+	var engagementRate pgtype.Float8
+	var contentFormats pgtype.FlatArray[string]
+	err := row.Scan(
+		&s.ID, &s.UserID, &s.InfluencerName, &s.Platform,
+		&s.OverallScore, &s.EngagementScore, &s.AudienceScore, &s.BrandFitScore,
+		&s.RawPayload, &s.Notes,
+		&s.Niche, &s.AudienceGeo, &s.AudienceDemo, &s.FollowerRange, &engagementRate, &contentFormats,
+		&s.CreatedAt, &s.UpdatedAt,
+	)
+	if err != nil {
+		return s, err
+	}
+	if engagementRate.Valid {
+		rate := engagementRate.Float64
+		s.EngagementRate = &rate
+	}
+	if contentFormats != nil {
+		s.ContentFormats = append([]string(nil), contentFormats...)
+	}
+	return s, nil
+}
+
+func engagementRateParam(rate *float64) any {
+	if rate == nil {
+		return nil
+	}
+	return *rate
+}
+
+func contentFormatsParam(formats []string) any {
+	if len(formats) == 0 {
+		return pgtype.FlatArray[string]{}
+	}
+	return pgtype.FlatArray[string](formats)
+}
+
 func (r *ScoreRepo) Create(ctx context.Context, score *model.InfluencerScore) error {
 	if score.ID == uuid.Nil {
 		score.ID = uuid.New()
@@ -35,11 +81,17 @@ func (r *ScoreRepo) Create(ctx context.Context, score *model.InfluencerScore) er
 		INSERT INTO influencer_scores (
 			id, user_id, influencer_name, platform,
 			overall_score, engagement_score, audience_score, brand_fit_score,
-			raw_payload, notes, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+			raw_payload, notes,
+			niche, audience_geo, audience_demo, follower_range, engagement_rate, content_formats,
+			created_at, updated_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
 		score.ID, score.UserID, score.InfluencerName, score.Platform,
 		score.OverallScore, score.EngagementScore, score.AudienceScore, score.BrandFitScore,
-		score.RawPayload, score.Notes, score.CreatedAt, score.UpdatedAt,
+		score.RawPayload, score.Notes,
+		nullIfEmpty(score.Niche), nullIfEmpty(score.AudienceGeo), nullIfEmpty(score.AudienceDemo),
+		nullIfEmpty(score.FollowerRange), engagementRateParam(score.EngagementRate),
+		contentFormatsParam(score.ContentFormats),
+		score.CreatedAt, score.UpdatedAt,
 	)
 	if err != nil {
 		return domainErr.New(domainErr.ErrInternal, "failed to create score", err)
@@ -48,17 +100,9 @@ func (r *ScoreRepo) Create(ctx context.Context, score *model.InfluencerScore) er
 }
 
 func (r *ScoreRepo) GetByID(ctx context.Context, userID, id uuid.UUID) (*model.InfluencerScore, error) {
-	var s model.InfluencerScore
-	err := r.db.QueryRow(ctx, `
-		SELECT id, user_id, influencer_name, platform,
-			overall_score, engagement_score, audience_score, brand_fit_score,
-			raw_payload, notes, created_at, updated_at
-		FROM influencer_scores WHERE id = $1 AND user_id = $2`, id, userID,
-	).Scan(
-		&s.ID, &s.UserID, &s.InfluencerName, &s.Platform,
-		&s.OverallScore, &s.EngagementScore, &s.AudienceScore, &s.BrandFitScore,
-		&s.RawPayload, &s.Notes, &s.CreatedAt, &s.UpdatedAt,
-	)
+	s, err := scanScore(r.db.QueryRow(ctx, `
+		SELECT`+scoreSelectColumns+`
+		FROM influencer_scores WHERE id = $1 AND user_id = $2`, id, userID))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domainErr.New(domainErr.ErrNotFound, "score not found", nil)
@@ -70,9 +114,7 @@ func (r *ScoreRepo) GetByID(ctx context.Context, userID, id uuid.UUID) (*model.I
 
 func (r *ScoreRepo) ListByUser(ctx context.Context, userID uuid.UUID, platform string, limit, offset int) ([]model.InfluencerScore, error) {
 	query := `
-		SELECT id, user_id, influencer_name, platform,
-			overall_score, engagement_score, audience_score, brand_fit_score,
-			raw_payload, notes, created_at, updated_at
+		SELECT` + scoreSelectColumns + `
 		FROM influencer_scores WHERE user_id = $1`
 	args := []any{userID}
 	if platform != "" {
@@ -91,12 +133,8 @@ func (r *ScoreRepo) ListByUser(ctx context.Context, userID uuid.UUID, platform s
 
 	var out []model.InfluencerScore
 	for rows.Next() {
-		var s model.InfluencerScore
-		if err := rows.Scan(
-			&s.ID, &s.UserID, &s.InfluencerName, &s.Platform,
-			&s.OverallScore, &s.EngagementScore, &s.AudienceScore, &s.BrandFitScore,
-			&s.RawPayload, &s.Notes, &s.CreatedAt, &s.UpdatedAt,
-		); err != nil {
+		s, err := scanScore(rows)
+		if err != nil {
 			return nil, domainErr.New(domainErr.ErrInternal, "failed to scan score", err)
 		}
 		out = append(out, s)
@@ -113,11 +151,18 @@ func (r *ScoreRepo) Update(ctx context.Context, score *model.InfluencerScore) er
 		UPDATE influencer_scores SET
 			influencer_name = $1, platform = $2,
 			overall_score = $3, engagement_score = $4, audience_score = $5, brand_fit_score = $6,
-			raw_payload = $7, notes = $8, updated_at = $9
-		WHERE id = $10 AND user_id = $11`,
+			raw_payload = $7, notes = $8,
+			niche = $9, audience_geo = $10, audience_demo = $11, follower_range = $12,
+			engagement_rate = $13, content_formats = $14,
+			updated_at = $15
+		WHERE id = $16 AND user_id = $17`,
 		score.InfluencerName, score.Platform,
 		score.OverallScore, score.EngagementScore, score.AudienceScore, score.BrandFitScore,
-		score.RawPayload, score.Notes, score.UpdatedAt, score.ID, score.UserID,
+		score.RawPayload, score.Notes,
+		nullIfEmpty(score.Niche), nullIfEmpty(score.AudienceGeo), nullIfEmpty(score.AudienceDemo),
+		nullIfEmpty(score.FollowerRange), engagementRateParam(score.EngagementRate),
+		contentFormatsParam(score.ContentFormats),
+		score.UpdatedAt, score.ID, score.UserID,
 	)
 	if err != nil {
 		return domainErr.New(domainErr.ErrInternal, "failed to update score", err)
@@ -137,6 +182,13 @@ func (r *ScoreRepo) Delete(ctx context.Context, userID, id uuid.UUID) error {
 		return domainErr.New(domainErr.ErrNotFound, "score not found", nil)
 	}
 	return nil
+}
+
+func nullIfEmpty(value string) any {
+	if value == "" {
+		return nil
+	}
+	return value
 }
 
 type AnalysisRepo struct {

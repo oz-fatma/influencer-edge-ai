@@ -24,6 +24,12 @@ var allowedPlatforms = map[string]struct{}{
 type CreateScoreRequest struct {
 	InfluencerName  string   `json:"influencer_name" validate:"required"`
 	Platform        string   `json:"platform" validate:"required"`
+	Niche           string   `json:"niche" validate:"required"`
+	AudienceGeo     string   `json:"audience_geo" validate:"required"`
+	AudienceDemo    string   `json:"audience_demo" validate:"required"`
+	FollowerRange   string   `json:"follower_range" validate:"required"`
+	EngagementRate  float64  `json:"engagement_rate" validate:"required"`
+	ContentFormats  []string `json:"content_formats" validate:"required,min=1"`
 	OverallScore    *float64 `json:"overall_score,omitempty"`
 	EngagementScore *float64 `json:"engagement_score,omitempty"`
 	AudienceScore   *float64 `json:"audience_score,omitempty"`
@@ -33,14 +39,20 @@ type CreateScoreRequest struct {
 }
 
 type UpdateScoreRequest struct {
-	InfluencerName  *string  `json:"influencer_name"`
-	Platform        *string  `json:"platform"`
-	OverallScore    *float64 `json:"overall_score"`
-	EngagementScore *float64 `json:"engagement_score"`
-	AudienceScore   *float64 `json:"audience_score"`
-	BrandFitScore   *float64 `json:"brand_fit_score"`
-	RawPayload      *string  `json:"raw_payload"`
-	Notes           *string  `json:"notes"`
+	InfluencerName  *string   `json:"influencer_name"`
+	Platform        *string   `json:"platform"`
+	Niche           *string   `json:"niche"`
+	AudienceGeo     *string   `json:"audience_geo"`
+	AudienceDemo    *string   `json:"audience_demo"`
+	FollowerRange   *string   `json:"follower_range"`
+	EngagementRate  *float64  `json:"engagement_rate"`
+	ContentFormats  *[]string `json:"content_formats"`
+	OverallScore    *float64  `json:"overall_score"`
+	EngagementScore *float64  `json:"engagement_score"`
+	AudienceScore   *float64  `json:"audience_score"`
+	BrandFitScore   *float64  `json:"brand_fit_score"`
+	RawPayload      *string   `json:"raw_payload"`
+	Notes           *string   `json:"notes"`
 }
 
 type CreateAnalysisRequest struct {
@@ -54,9 +66,15 @@ type CreateAnalysisRequest struct {
 }
 
 type AnalyzeInfluencerRequest struct {
-	InfluencerName string `json:"influencer_name" validate:"required"`
-	Platform       string `json:"platform" validate:"required"`
-	Notes          string `json:"notes"`
+	InfluencerName string   `json:"influencer_name" validate:"required"`
+	Platform       string   `json:"platform" validate:"required"`
+	Niche          string   `json:"niche"`
+	AudienceGeo    string   `json:"audience_geo"`
+	AudienceDemo   string   `json:"audience_demo"`
+	FollowerRange  string   `json:"follower_range"`
+	EngagementRate *float64 `json:"engagement_rate"`
+	ContentFormats []string `json:"content_formats"`
+	Notes          string   `json:"notes"`
 }
 
 type AnalyzeInfluencerResponse struct {
@@ -85,6 +103,12 @@ type ScoreResponse struct {
 	UserID          uuid.UUID `json:"user_id"`
 	InfluencerName  string    `json:"influencer_name"`
 	Platform        string    `json:"platform"`
+	Niche           string    `json:"niche,omitempty"`
+	AudienceGeo     string    `json:"audience_geo,omitempty"`
+	AudienceDemo    string    `json:"audience_demo,omitempty"`
+	FollowerRange   string    `json:"follower_range,omitempty"`
+	EngagementRate  *float64  `json:"engagement_rate,omitempty"`
+	ContentFormats  []string  `json:"content_formats,omitempty"`
 	OverallScore    float64   `json:"overall_score"`
 	EngagementScore float64   `json:"engagement_score"`
 	AudienceScore   float64   `json:"audience_score"`

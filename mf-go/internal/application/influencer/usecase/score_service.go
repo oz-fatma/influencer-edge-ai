@@ -28,12 +28,18 @@ func (s *ScoreService) Create(ctx context.Context, userID uuid.UUID, req dto.Cre
 		UserID:          userID,
 		InfluencerName:  strings.TrimSpace(req.InfluencerName),
 		Platform:        dto.NormalizePlatform(req.Platform),
+		Niche:           strings.TrimSpace(req.Niche),
+		AudienceGeo:     strings.TrimSpace(req.AudienceGeo),
+		AudienceDemo:    strings.TrimSpace(req.AudienceDemo),
+		FollowerRange:   strings.TrimSpace(req.FollowerRange),
+		EngagementRate:  &req.EngagementRate,
+		ContentFormats:  append([]string(nil), req.ContentFormats...),
 		OverallScore:    dto.ScoreValueOrDefault(req.OverallScore),
 		EngagementScore: dto.ScoreValueOrDefault(req.EngagementScore),
 		AudienceScore:   dto.ScoreValueOrDefault(req.AudienceScore),
 		BrandFitScore:   dto.ScoreValueOrDefault(req.BrandFitScore),
 		RawPayload:      req.RawPayload,
-		Notes:           req.Notes,
+		Notes:           strings.TrimSpace(req.Notes),
 	}
 	if err := s.scores.Create(ctx, score); err != nil {
 		return nil, err
@@ -102,7 +108,7 @@ func validateCreateScore(req dto.CreateScoreRequest) error {
 	if len(req.RawPayload) > dto.MaxRawPayloadLen {
 		return domainErr.New(domainErr.ErrValidation, "raw_payload must be at most 65536 characters", nil)
 	}
-	return nil
+	return dto.ValidateCreateProfile(req)
 }
 
 func applyScoreUpdate(score *model.InfluencerScore, req dto.UpdateScoreRequest) error {
@@ -117,6 +123,27 @@ func applyScoreUpdate(score *model.InfluencerScore, req dto.UpdateScoreRequest) 
 			return err
 		}
 		score.Platform = dto.NormalizePlatform(*req.Platform)
+	}
+	if req.Niche != nil {
+		score.Niche = strings.TrimSpace(*req.Niche)
+	}
+	if req.AudienceGeo != nil {
+		score.AudienceGeo = strings.TrimSpace(*req.AudienceGeo)
+	}
+	if req.AudienceDemo != nil {
+		score.AudienceDemo = strings.TrimSpace(*req.AudienceDemo)
+	}
+	if req.FollowerRange != nil {
+		score.FollowerRange = strings.TrimSpace(*req.FollowerRange)
+	}
+	if req.EngagementRate != nil {
+		if *req.EngagementRate < 0 || *req.EngagementRate > 100 {
+			return domainErr.New(domainErr.ErrValidation, "engagement_rate must be between 0 and 100", nil)
+		}
+		score.EngagementRate = req.EngagementRate
+	}
+	if req.ContentFormats != nil {
+		score.ContentFormats = append([]string(nil), *req.ContentFormats...)
 	}
 	if req.OverallScore != nil {
 		if err := dto.ValidateScoreValue(*req.OverallScore); err != nil {
@@ -163,12 +190,18 @@ func toScoreResponse(score *model.InfluencerScore) dto.ScoreResponse {
 		UserID:          score.UserID,
 		InfluencerName:  score.InfluencerName,
 		Platform:        score.Platform,
+		Niche:           score.Niche,
+		AudienceGeo:     score.AudienceGeo,
+		AudienceDemo:    score.AudienceDemo,
+		FollowerRange:   score.FollowerRange,
+		EngagementRate:  score.EngagementRate,
+		ContentFormats:  append([]string(nil), score.ContentFormats...),
 		OverallScore:    score.OverallScore,
 		EngagementScore: score.EngagementScore,
 		AudienceScore:   score.AudienceScore,
 		BrandFitScore:   score.BrandFitScore,
 		RawPayload:      score.RawPayload,
-		Notes:             score.Notes,
+		Notes:           score.Notes,
 		CreatedAt:         score.CreatedAt,
 		UpdatedAt:         score.UpdatedAt,
 	}

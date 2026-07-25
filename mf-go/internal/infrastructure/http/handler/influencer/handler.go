@@ -206,7 +206,17 @@ func (h *Handler) AnalyzeInfluencerLLM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, rawOutput, err := h.llm.Analyze(r.Context(), req.InfluencerName, req.Platform, req.Notes)
+	profile := dto.InfluencerProfile{
+		Niche:          req.Niche,
+		AudienceGeo:    req.AudienceGeo,
+		AudienceDemo:   req.AudienceDemo,
+		FollowerRange:  req.FollowerRange,
+		EngagementRate: req.EngagementRate,
+		ContentFormats: append([]string(nil), req.ContentFormats...),
+	}
+	notes := dto.BuildAnalyzePrompt(profile, req.Notes)
+
+	result, rawOutput, err := h.llm.Analyze(r.Context(), req.InfluencerName, req.Platform, notes)
 	if err != nil {
 		response.JSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
 		return

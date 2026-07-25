@@ -15,6 +15,7 @@ import {
   type InfluencerScore,
 } from "@/lib/api";
 import { sendMCPRequest, type RichResult } from "@/lib/mcp";
+import { buildMCPContext, profileSummary } from "@/lib/influencer-profile";
 import { scoreColor } from "@/lib/score-utils";
 import {
   analyzeInfluencer,
@@ -223,6 +224,12 @@ export default function MatchingPage() {
       {
         name: selected.influencer_name,
         platform: selected.platform,
+        niche: selected.niche,
+        audience_geo: selected.audience_geo,
+        audience_demo: selected.audience_demo,
+        follower_range: selected.follower_range,
+        engagement_rate: selected.engagement_rate,
+        content_formats: selected.content_formats,
         notes: selected.notes,
       },
       (report) => {
@@ -255,11 +262,17 @@ export default function MatchingPage() {
       const rich = await sendMCPRequest(
         {
           request_type: "analyze_influencer",
-          context: {
+          context: buildMCPContext({
             influencer_name: selected.influencer_name,
             platform: selected.platform,
-            ...(selected.notes ? { notes: selected.notes } : {}),
-          },
+            niche: selected.niche,
+            audience_geo: selected.audience_geo,
+            audience_demo: selected.audience_demo,
+            follower_range: selected.follower_range,
+            engagement_rate: selected.engagement_rate,
+            content_formats: selected.content_formats,
+            notes: selected.notes,
+          }),
           query: MCP_ANALYZE_QUERY,
         },
         undefined,
@@ -426,8 +439,11 @@ export default function MatchingPage() {
                   <div>
                     <h2 className="text-xl font-bold">{selected.influencer_name}</h2>
                     <p className="text-sm capitalize text-[var(--muted)]">{selected.platform}</p>
+                    <p className="mt-2 text-xs text-[var(--muted)]">{profileSummary(selected)}</p>
                     {selected.notes && (
-                      <p className="mt-2 text-xs text-[var(--muted)]">{selected.notes}</p>
+                      <p className="mt-1 text-xs text-[var(--muted)]">
+                        Collaborations: {selected.notes}
+                      </p>
                     )}
                   </div>
                   <button

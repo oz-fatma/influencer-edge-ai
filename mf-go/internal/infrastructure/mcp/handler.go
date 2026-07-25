@@ -71,7 +71,13 @@ func (s *Service) handleAnalyzeInfluencer(
 ) (RichResult, error) {
 	name := contextString(req.Context, "influencer_name")
 	platform := contextString(req.Context, "platform")
-	notes := buildNotes(contextString(req.Context, "notes"), req.Query)
+	profile := dto.ProfileFromMap(req.Context)
+	legacyNotes := strings.TrimSpace(profile.Notes)
+	if legacyNotes == "" {
+		legacyNotes = contextString(req.Context, "notes")
+	}
+	profile.Notes = ""
+	notes := buildNotes(dto.BuildAnalyzePrompt(profile, legacyNotes), req.Query)
 
 	if err := dto.ValidateInfluencerName(name); err != nil {
 		return RichResult{}, fmt.Errorf("context.influencer_name: %s", err.Error())

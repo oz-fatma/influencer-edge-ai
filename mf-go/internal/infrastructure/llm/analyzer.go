@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/masterfabric-go/masterfabric/internal/application/influencer/dto"
 	"github.com/masterfabric-go/masterfabric/internal/shared/config"
 )
 
@@ -86,7 +87,11 @@ func (a *Analyzer) Model() string {
 }
 
 func (a *Analyzer) Analyze(ctx context.Context, name, platform, notes string) (*AnalysisResult, string, error) {
-	userPrompt := buildPrompt(name, platform, notes)
+	return a.AnalyzeWithProfile(ctx, name, platform, dto.InfluencerProfile{Notes: notes}, notes)
+}
+
+func (a *Analyzer) AnalyzeWithProfile(ctx context.Context, name, platform string, profile dto.InfluencerProfile, legacyNotes string) (*AnalysisResult, string, error) {
+	userPrompt := buildPrompt(name, platform, dto.BuildAnalyzePrompt(profile, legacyNotes))
 	promptLength := len(systemPrompt) + len(userPrompt)
 
 	start := time.Now()

@@ -7,6 +7,7 @@ import {
   scoresApi,
   type InfluencerScore,
 } from "@/lib/api";
+import { profileSummary } from "@/lib/influencer-profile";
 import { platformColors, scoreColor } from "@/lib/score-utils";
 import AddInfluencerModal from "./AddInfluencerModal";
 
@@ -132,7 +133,7 @@ export default function InfluencersPage() {
                     <th className="px-5 py-3 font-medium">Engagement</th>
                     <th className="px-5 py-3 font-medium">Audience</th>
                     <th className="px-5 py-3 font-medium">Brand Fit</th>
-                    <th className="px-5 py-3 font-medium">Notes</th>
+                    <th className="px-5 py-3 font-medium">Profile</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -156,7 +157,7 @@ export default function InfluencersPage() {
                       <td className="px-5 py-4 text-[var(--muted)]">{s.audience_score}</td>
                       <td className="px-5 py-4 text-[var(--muted)]">{s.brand_fit_score}</td>
                       <td className="max-w-xs truncate px-5 py-4 text-[var(--muted)]">
-                        {s.notes || "—"}
+                        {profileSummary(s)}
                       </td>
                     </tr>
                   ))}
@@ -188,8 +189,11 @@ export default function InfluencersPage() {
                     <MiniStat label="Audience" value={s.audience_score} />
                     <MiniStat label="Brand" value={s.brand_fit_score} />
                   </div>
+                  <p className="mt-3 text-xs text-[var(--muted)]">{profileSummary(s)}</p>
                   {s.notes && (
-                    <p className="mt-3 text-xs text-[var(--muted)]">{s.notes}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      Collaborations: {s.notes}
+                    </p>
                   )}
                 </article>
               ))}

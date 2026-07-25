@@ -162,6 +162,12 @@ export type InfluencerScore = {
   user_id: string;
   influencer_name: string;
   platform: string;
+  niche?: string;
+  audience_geo?: string;
+  audience_demo?: string;
+  follower_range?: string;
+  engagement_rate?: number;
+  content_formats?: string[];
   overall_score: number;
   engagement_score: number;
   audience_score: number;
@@ -189,6 +195,12 @@ export type InfluencerAnalysis = {
 export type CreateScorePayload = {
   influencer_name: string;
   platform: string;
+  niche: string;
+  audience_geo: string;
+  audience_demo: string;
+  follower_range: string;
+  engagement_rate: number;
+  content_formats: string[];
   overall_score?: number;
   engagement_score?: number;
   audience_score?: number;
