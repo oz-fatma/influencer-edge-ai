@@ -276,7 +276,7 @@ export const monitoringApi = {
 export const SERVER_LLM_MODEL_ID = "gemma2:2b";
 
 /** Server Ollama analyze can take 25–70s+ (cold start); keep above backend LLM latency. */
-export const SERVER_LLM_ANALYZE_TIMEOUT_MS = 90_000;
+export const SERVER_LLM_ANALYZE_TIMEOUT_MS = 180_000;
 
 export type InfluencerAnalysisResult = {
   overall_score: number;
