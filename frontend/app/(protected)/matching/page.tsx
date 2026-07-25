@@ -6,7 +6,6 @@ import {
   ApiError,
   handleUnauthorizedRedirect,
   isUnauthorized,
-  llmApi,
   monitoringApi,
   scoresApi,
   SERVER_LLM_MODEL_ID,
@@ -15,6 +14,7 @@ import {
   type InfluencerAnalysisResult,
   type InfluencerScore,
 } from "@/lib/api";
+import { sendMCPRequest, type RichResult } from "@/lib/mcp";
 import { scoreColor } from "@/lib/score-utils";
 import {
   analyzeInfluencer,
@@ -26,6 +26,36 @@ import {
 } from "@/lib/webllm";
 
 type AnalysisPhase = "idle" | "server" | "browser";
+
+const MCP_ANALYZE_QUERY = "Assess brand-fit and engagement potential";
+
+function mapMCPRichResultToAnalysis(rich: RichResult): {
+  result: InfluencerAnalysisResult;
+  rawOutput: string;
+  model: string;
+} {
+  const { data, metadata } = rich;
+  const summary = typeof data.summary === "string" ? data.summary.trim() : "";
+  if (!summary) {
+    throw new ApiError("MCP response missing summary", 502);
+  }
+
+  return {
+    result: {
+      overall_score: Number(data.overall_score) || 0,
+      engagement_score: Number(data.engagement_score) || 0,
+      audience_score: Number(data.audience_score) || 0,
+      brand_fit_score: Number(data.brand_fit_score) || 0,
+      summary,
+      insights: normalizeInsights(data.insights),
+    },
+    rawOutput: typeof data.raw_output === "string" ? data.raw_output : "",
+    model:
+      typeof metadata.model === "string" && metadata.model.trim() !== ""
+        ? metadata.model
+        : SERVER_LLM_MODEL_ID,
+  };
+}
 
 function matchAnalysis(
   score: InfluencerScore,
@@ -222,17 +252,22 @@ export default function MatchingPage() {
     const startTime = performance.now();
 
     try {
-      // MCP alternative available via sendMCPRequest() from @/lib/mcp
-      const { result, raw_output: rawOutput } = await llmApi.analyze(
+      const rich = await sendMCPRequest(
         {
-          influencer_name: selected.influencer_name,
-          platform: selected.platform,
-          notes: selected.notes,
+          request_type: "analyze_influencer",
+          context: {
+            influencer_name: selected.influencer_name,
+            platform: selected.platform,
+            ...(selected.notes ? { notes: selected.notes } : {}),
+          },
+          query: MCP_ANALYZE_QUERY,
         },
+        undefined,
         SERVER_LLM_ANALYZE_TIMEOUT_MS,
       );
 
-      await persistAnalysis(result, rawOutput, "ollama", SERVER_LLM_MODEL_ID, startTime);
+      const { result, rawOutput, model } = mapMCPRichResultToAnalysis(rich);
+      await persistAnalysis(result, rawOutput, "ollama", model, startTime);
     } catch (serverErr) {
       if (isUnauthorized(serverErr)) {
         handleUnauthorizedRedirect("/matching");
