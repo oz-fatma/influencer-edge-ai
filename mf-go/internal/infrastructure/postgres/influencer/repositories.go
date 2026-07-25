@@ -33,17 +33,30 @@ const scoreSelectColumns = `
 
 func scanScore(row pgx.Row) (model.InfluencerScore, error) {
 	var s model.InfluencerScore
+	var niche, audienceGeo, audienceDemo, followerRange pgtype.Text
 	var engagementRate pgtype.Float8
 	var contentFormats pgtype.FlatArray[string]
 	err := row.Scan(
 		&s.ID, &s.UserID, &s.InfluencerName, &s.Platform,
 		&s.OverallScore, &s.EngagementScore, &s.AudienceScore, &s.BrandFitScore,
 		&s.RawPayload, &s.Notes,
-		&s.Niche, &s.AudienceGeo, &s.AudienceDemo, &s.FollowerRange, &engagementRate, &contentFormats,
+		&niche, &audienceGeo, &audienceDemo, &followerRange, &engagementRate, &contentFormats,
 		&s.CreatedAt, &s.UpdatedAt,
 	)
 	if err != nil {
 		return s, err
+	}
+	if niche.Valid {
+		s.Niche = niche.String
+	}
+	if audienceGeo.Valid {
+		s.AudienceGeo = audienceGeo.String
+	}
+	if audienceDemo.Valid {
+		s.AudienceDemo = audienceDemo.String
+	}
+	if followerRange.Valid {
+		s.FollowerRange = followerRange.String
 	}
 	if engagementRate.Valid {
 		rate := engagementRate.Float64
