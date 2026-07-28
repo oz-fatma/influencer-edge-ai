@@ -40,6 +40,36 @@ func TestBuildAnalyzePrompt_legacyNotesOnly(t *testing.T) {
 	}
 }
 
+func TestBuildAnalyzePromptWithQuery_mergesProfileAndQuestion(t *testing.T) {
+	got := dto.BuildAnalyzePromptWithQuery(dto.InfluencerProfile{
+		Niche: "Tech",
+	}, "", "Bu influencer genç bir teknoloji markası için uygun mu?")
+
+	if !strings.Contains(got, "Influencer profile:") {
+		t.Fatalf("expected profile prefix: %q", got)
+	}
+	if !strings.Contains(got, "Niche: Tech") {
+		t.Fatalf("expected niche in profile: %q", got)
+	}
+	if !strings.Contains(got, "Question: Bu influencer genç bir teknoloji markası için uygun mu?") {
+		t.Fatalf("expected question suffix: %q", got)
+	}
+}
+
+func TestBuildAnalyzePromptWithQuery_defaultsEmptyQuestion(t *testing.T) {
+	got := dto.BuildAnalyzePromptWithQuery(dto.InfluencerProfile{}, "Legacy notes", "")
+	if !strings.Contains(got, dto.DefaultAnalyzeQuery) {
+		t.Fatalf("expected default query: %q", got)
+	}
+}
+
+func TestValidateAnalyzeQuery_rejectsTooLong(t *testing.T) {
+	err := dto.ValidateAnalyzeQuery(strings.Repeat("x", 501))
+	if err == nil {
+		t.Fatal("expected validation error")
+	}
+}
+
 func TestValidateCreateProfile_requiresContentFormats(t *testing.T) {
 	err := dto.ValidateCreateProfile(dto.CreateScoreRequest{
 		Niche:          "Beauty and skincare",

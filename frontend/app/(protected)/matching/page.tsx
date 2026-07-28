@@ -16,7 +16,7 @@ import {
   type InfluencerScore,
 } from "@/lib/api";
 import { sendMCPRequest, type RichResult } from "@/lib/mcp";
-import { buildMCPContext, profileSummary } from "@/lib/influencer-profile";
+import { buildMCPContext, profileSummary, DEFAULT_ANALYZE_QUERY, MAX_ANALYZE_QUERY_LEN } from "@/lib/influencer-profile";
 import { scoreColor } from "@/lib/score-utils";
 import {
   analyzeInfluencer,
@@ -29,7 +29,7 @@ import {
 
 type AnalysisPhase = "idle" | "server" | "browser";
 
-const MCP_ANALYZE_QUERY = "Assess brand-fit and engagement potential";
+const MCP_ANALYZE_QUERY = DEFAULT_ANALYZE_QUERY;
 
 function mapMCPRichResultToAnalysis(rich: RichResult): {
   result: InfluencerAnalysisResult;
@@ -118,6 +118,8 @@ export default function MatchingPage() {
   const [engineBusy, setEngineBusy] = useState(false);
   const [modelProgress, setModelProgress] = useState<number | null>(null);
   const [modelProgressText, setModelProgressText] = useState("");
+  const [userQuestion, setUserQuestion] = useState("");
+  const [askedQuestion, setAskedQuestion] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -216,7 +218,7 @@ export default function MatchingPage() {
     setAnalysisSource(analysisType);
   }
 
-  async function runWebLLMAnalyze(startTime: number) {
+  async function runWebLLMAnalyze(startTime: number, query: string) {
     if (!selected) return;
 
     setAnalysisPhase("browser");
@@ -236,6 +238,7 @@ export default function MatchingPage() {
         engagement_rate: selected.engagement_rate,
         content_formats: selected.content_formats,
         notes: selected.notes,
+        question: query,
       },
       (report) => {
         setEngineBusy(isWebLLMLoading());
@@ -254,12 +257,21 @@ export default function MatchingPage() {
   async function handleAnalyze() {
     if (!selected || analyzing) return;
 
+    const trimmedQuestion = userQuestion.trim();
+    if (trimmedQuestion.length > MAX_ANALYZE_QUERY_LEN) {
+      setAnalysisError(`Question must be at most ${MAX_ANALYZE_QUERY_LEN} characters.`);
+      return;
+    }
+
+    const query = trimmedQuestion || MCP_ANALYZE_QUERY;
+
     setAnalyzing(true);
     setAnalysisPhase("server");
     setAnalysisError(null);
     setAnalysisNotice(null);
     setLiveResult(null);
     setAnalysisSource(null);
+    setAskedQuestion(trimmedQuestion || null);
     setModelProgress(null);
 
     const startTime = performance.now();
@@ -279,7 +291,7 @@ export default function MatchingPage() {
             content_formats: selected.content_formats,
             notes: selected.notes,
           }),
-          query: MCP_ANALYZE_QUERY,
+          query,
         },
         undefined,
         SERVER_LLM_ANALYZE_TIMEOUT_MS,
@@ -318,7 +330,7 @@ export default function MatchingPage() {
       );
 
       try {
-        await runWebLLMAnalyze(startTime);
+        await runWebLLMAnalyze(startTime, query);
       } catch (browserErr) {
         const latencyMs = Math.round(performance.now() - startTime);
         try {
@@ -346,6 +358,8 @@ export default function MatchingPage() {
     setAnalysisError(null);
     setAnalysisNotice(null);
     setAnalysisSource(null);
+    setAskedQuestion(null);
+    setUserQuestion("");
   }
 
   const displayScores = liveResult
@@ -458,6 +472,30 @@ export default function MatchingPage() {
                   </button>
                 </div>
 
+                <div className="mt-5">
+                  <label
+                    htmlFor="analyze-question"
+                    className="mb-1.5 block text-sm font-medium text-[var(--foreground)]"
+                  >
+                    Your question{" "}
+                    <span className="font-normal text-[var(--muted)]">(optional)</span>
+                  </label>
+                  <textarea
+                    id="analyze-question"
+                    rows={2}
+                    value={userQuestion}
+                    onChange={(e) => setUserQuestion(e.target.value)}
+                    maxLength={MAX_ANALYZE_QUERY_LEN}
+                    disabled={analyzing || engineBusy}
+                    placeholder="Örn: Bu influencer genç bir teknoloji markası için uygun mu?"
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 disabled:opacity-50"
+                  />
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    {userQuestion.length}/{MAX_ANALYZE_QUERY_LEN} — leave empty for default
+                    analysis
+                  </p>
+                </div>
+
                 {modelProgress !== null && (
                   <div className="mt-5">
                     <div className="mb-1.5 flex items-center justify-between text-xs text-[var(--muted)]">
@@ -499,6 +537,15 @@ export default function MatchingPage() {
 
               {displaySummary ? (
                 <>
+                  {askedQuestion && (
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                        Soru
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed">{askedQuestion}</p>
+                    </div>
+                  )}
+
                   <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
                     <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
                       AI Summary

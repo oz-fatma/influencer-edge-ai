@@ -32,6 +32,9 @@ export const FOLLOWER_RANGES = [
 
 export const CONTENT_FORMATS = ["Reels", "Story", "Post", "Video"] as const;
 
+export const DEFAULT_ANALYZE_QUERY = "Assess brand-fit and engagement potential";
+export const MAX_ANALYZE_QUERY_LEN = 500;
+
 export type InfluencerProfileFields = {
   niche?: string;
   audience_geo?: string;
@@ -84,6 +87,19 @@ export function buildAnalyzeNotes(
     parts.push(`Past collaborations: ${legacyNotes}`);
   }
   return parts.join(", ");
+}
+
+/** Merges profile context and user question for LLM notes (matches backend format). */
+export function buildAnalyzePromptWithQuery(
+  score: InfluencerProfileFields,
+  question?: string,
+): string {
+  const profileText = buildAnalyzeNotes(score).trim();
+  const q = question?.trim() || DEFAULT_ANALYZE_QUERY;
+  if (!profileText || profileText === "No notes provided") {
+    return `Question: ${q}`;
+  }
+  return `Influencer profile: ${profileText}\n\nQuestion: ${q}`;
 }
 
 export function profileSummary(score: InfluencerProfileFields): string {

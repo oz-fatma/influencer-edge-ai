@@ -13,18 +13,55 @@ import (
 	"github.com/masterfabric-go/masterfabric/internal/shared/config"
 )
 
-func TestHandleMCPRequest_rejectsEmptyQuery(t *testing.T) {
-	svc := NewService(&llm.Analyzer{}, "gemma-influencer-ft")
+func TestHandleMCPRequest_usesDefaultQueryWhenEmpty(t *testing.T) {
+	mockLLM := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"choices": []map[string]any{
+				{
+					"message": map[string]any{
+						"content": `{"overall_score":82.5,"engagement_score":88,"audience_score":79,"brand_fit_score":80,"summary":"Strong profile","insights":["Good engagement"]}`,
+					},
+				},
+			},
+		})
+	}))
+	defer mockLLM.Close()
 
-	_, err := svc.HandleMCPRequest(context.Background(), MCPPayload{
+	analyzer := llm.NewAnalyzer(config.LLMConfig{
+		BaseURL: mockLLM.URL,
+		Model:   "gemma-influencer-ft",
+		Timeout: time.Minute,
+	}, nil, nil)
+	svc := NewService(analyzer, "gemma-influencer-ft")
+
+	result, err := svc.HandleMCPRequest(context.Background(), MCPPayload{
 		RequestType: RequestTypeAnalyzeInfluencer,
+		Query:       "   ",
 		Context: map[string]any{
 			"influencer_name": "Ada Lovelace",
 			"platform":        "instagram",
 		},
-		Query: "   ",
 	})
-	if err == nil || !strings.Contains(err.Error(), "query is required") {
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Data["summary"] != "Strong profile" {
+		t.Fatalf("data.summary = %v", result.Data["summary"])
+	}
+}
+
+func TestHandleMCPRequest_rejectsQueryTooLong(t *testing.T) {
+	svc := NewService(&llm.Analyzer{}, "gemma-influencer-ft")
+
+	_, err := svc.HandleMCPRequest(context.Background(), MCPPayload{
+		RequestType: RequestTypeAnalyzeInfluencer,
+		Query:       strings.Repeat("a", 501),
+		Context: map[string]any{
+			"influencer_name": "Ada Lovelace",
+			"platform":        "instagram",
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "query") {
 		t.Fatalf("expected query validation error, got %v", err)
 	}
 }
@@ -133,12 +170,5 @@ func TestResolveModel_prefersConfiguredModel(t *testing.T) {
 	svc := NewService(nil, "gemma-influencer-ft")
 	if got := svc.resolveModel(MCPPayload{}); got != "gemma-influencer-ft" {
 		t.Fatalf("model = %q, want gemma-influencer-ft", got)
-	}
-}
-
-func TestBuildNotes_mergesContextAndQuery(t *testing.T) {
-	got := buildNotes("Base notes", "Extra question")
-	if !strings.Contains(got, "Base notes") || !strings.Contains(got, "Extra question") {
-		t.Fatalf("unexpected notes merge: %q", got)
 	}
 }

@@ -1,6 +1,6 @@
 import type { InitProgressCallback, MLCEngine } from "@mlc-ai/web-llm";
 import type { InfluencerProfileFields } from "./influencer-profile";
-import { buildAnalyzeNotes } from "./influencer-profile";
+import { buildAnalyzePromptWithQuery } from "./influencer-profile";
 
 /** Smallest fast Gemma model in WebLLM prebuilt list. */
 export const WEBLLM_MODEL_ID = "gemma-2b-it-q4f16_1-MLC";
@@ -56,6 +56,7 @@ const FEW_SHOT_EXAMPLE = JSON.stringify(
 export type InfluencerInput = InfluencerProfileFields & {
   name: string;
   platform: string;
+  question?: string;
 };
 
 export type InfluencerAnalysisResult = {
@@ -190,7 +191,7 @@ export async function initWebLLMEngine(
 }
 
 function buildPrompt(input: InfluencerInput): string {
-  const notes = buildAnalyzeNotes(input);
+  const notes = buildAnalyzePromptWithQuery(input, input.question);
   return `You are an influencer marketing analyst.
 
 CRITICAL OUTPUT RULES:

@@ -93,6 +93,34 @@ func BuildAnalyzePrompt(profile InfluencerProfile, legacyNotes string) string {
 	return strings.Join(parts, ", ")
 }
 
+const (
+	// MaxQueryLen is the maximum length of a user analyze question (MCP query).
+	MaxQueryLen = 500
+	// DefaultAnalyzeQuery is used when the client sends an empty query.
+	DefaultAnalyzeQuery = "Assess brand-fit and engagement potential"
+)
+
+// ValidateAnalyzeQuery checks MCP analyze question length.
+func ValidateAnalyzeQuery(query string) error {
+	if len(strings.TrimSpace(query)) > MaxQueryLen {
+		return domainErr.New(domainErr.ErrValidation, "query must be at most 500 characters", nil)
+	}
+	return nil
+}
+
+// BuildAnalyzePromptWithQuery merges structured profile context and the user question.
+func BuildAnalyzePromptWithQuery(profile InfluencerProfile, legacyNotes, query string) string {
+	profileText := strings.TrimSpace(BuildAnalyzePrompt(profile, legacyNotes))
+	query = strings.TrimSpace(query)
+	if query == "" {
+		query = DefaultAnalyzeQuery
+	}
+	if profileText == "" || profileText == "No notes provided" {
+		return "Question: " + query
+	}
+	return "Influencer profile: " + profileText + "\n\nQuestion: " + query
+}
+
 // ProfileFromMap reads structured profile fields from an MCP-style context map.
 func ProfileFromMap(ctx map[string]any) InfluencerProfile {
 	p := InfluencerProfile{

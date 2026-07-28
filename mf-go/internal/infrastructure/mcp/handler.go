@@ -33,9 +33,6 @@ func NewService(analyzer *llm.Analyzer, model string) *Service {
 func (s *Service) HandleMCPRequest(ctx context.Context, req MCPPayload) (RichResult, error) {
 	start := time.Now()
 
-	if strings.TrimSpace(req.Query) == "" {
-		return RichResult{}, fmt.Errorf("query is required")
-	}
 	if _, ok := supportedRequestTypes[req.RequestType]; !ok {
 		return RichResult{}, fmt.Errorf("unsupported request_type: %q", req.RequestType)
 	}
@@ -77,7 +74,16 @@ func (s *Service) handleAnalyzeInfluencer(
 		legacyNotes = contextString(req.Context, "notes")
 	}
 	profile.Notes = ""
-	notes := buildNotes(dto.BuildAnalyzePrompt(profile, legacyNotes), req.Query)
+
+	query := strings.TrimSpace(req.Query)
+	if query == "" {
+		query = dto.DefaultAnalyzeQuery
+	}
+	if err := dto.ValidateAnalyzeQuery(query); err != nil {
+		return RichResult{}, fmt.Errorf("query: %s", err.Error())
+	}
+
+	notes := dto.BuildAnalyzePromptWithQuery(profile, legacyNotes, query)
 
 	if err := dto.ValidateInfluencerName(name); err != nil {
 		return RichResult{}, fmt.Errorf("context.influencer_name: %s", err.Error())
@@ -128,16 +134,4 @@ func contextString(ctx map[string]any, key string) string {
 	default:
 		return strings.TrimSpace(fmt.Sprint(typed))
 	}
-}
-
-func buildNotes(contextNotes, query string) string {
-	contextNotes = strings.TrimSpace(contextNotes)
-	query = strings.TrimSpace(query)
-	if contextNotes == "" {
-		return query
-	}
-	if query == "" || query == contextNotes {
-		return contextNotes
-	}
-	return contextNotes + "\n\n" + query
 }
