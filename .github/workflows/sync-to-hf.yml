@@ -1,0 +1,22 @@
+name: Sync dataset to Hugging Face
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'influencer_training_data.json'
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install huggingface_hub
+        run: pip install huggingface_hub
+      - name: Upload to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          hf upload fatmaoz/influencer-edge-dataset ./influencer_training_data.json --token $HF_TOKEN
