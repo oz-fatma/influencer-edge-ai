@@ -1,0 +1,402 @@
+[
+  {
+    "input": "Instagram, Notes: skincare content, 25-35 age audience",
+    "output": "{\"overall_score\": 78, \"engagement_score\": 65, \"audience_score\": 85, \"brand_fit_score\": 70, \"summary\": \"This influencer shows strong alignment with skincare brands targeting mature audiences. Their content consistently resonates with an engaged, older demographic that values authenticity over trends.\", \"insights\": [\"Average 3.8% engagement over the last 30 days, slightly below category average\", \"Audience demographics strongly match the 25-35 target range with high retention\", \"Sponsored content performance reaches 75% of organic posts, indicating good brand trust\", \"Content consistency suggests reliable posting schedule beneficial for campaign planning\"]}"
+  },
+  {
+    "input": "TikTok, Notes: fitness content, 18-25 age audience",
+    "output": "{\"overall_score\": 82, \"engagement_score\": 90, \"audience_score\": 75, \"brand_fit_score\": 80, \"summary\": \"A high-energy fitness creator with exceptional engagement rates among younger audiences. Strong potential for activewear and supplement brand partnerships.\", \"insights\": [\"Engagement rate of 8.2% significantly exceeds platform average for fitness niche\", \"Young audience base shows high purchase intent based on comment sentiment\", \"Content format (short-form video) aligns well with product demonstration needs\", \"Consider seasonal campaign timing around New Year fitness resolutions\"]}"
+  },
+  {
+    "input": "Instagram, Notes: travel and lifestyle, 20-40 age audience",
+    "output": "{\"overall_score\": 75, \"engagement_score\": 70, \"audience_score\": 80, \"brand_fit_score\": 75, \"summary\": \"Well-rounded lifestyle content creator with broad appeal across a wide age range, suitable for diverse brand categories including travel, hospitality, and lifestyle products.\", \"insights\": [\"Consistent engagement across a broad 20-40 age range suggests versatile audience appeal\", \"Travel content performs particularly well during peak vacation planning seasons\", \"Cross-category brand fit makes this profile suitable for multiple campaign types\", \"Audience geographic diversity may require region-specific campaign strategies\"]}"
+  },
+  {
+    "input": "YouTube, Notes: tech reviews, 18-35 age audience",
+    "output": "{\"overall_score\": 85, \"engagement_score\": 80, \"audience_score\": 88, \"brand_fit_score\": 85, \"summary\": \"Highly credible tech reviewer with strong audience trust, ideal for technology and gadget brand partnerships seeking authentic product endorsements.\", \"insights\": [\"Long-form video format allows detailed product demonstration and builds trust\", \"Audience shows strong purchase intent following review content, per engagement patterns\", \"Tech-savvy demographic aligns well with early-adopter marketing strategies\", \"Consider exclusive early-access campaigns to leverage reviewer credibility\"]}"
+  },
+  {
+    "input": "Instagram, Notes: food and cooking, 25-45 age audience",
+    "output": "{\"overall_score\": 72, \"engagement_score\": 68, \"audience_score\": 75, \"brand_fit_score\": 72, \"summary\": \"Reliable food content creator with steady engagement, well-suited for kitchen brands, food products, and culinary tool partnerships targeting home cooking enthusiasts.\", \"insights\": [\"Consistent posting of recipe content builds long-term audience loyalty\", \"Engagement peaks around meal-planning times (weekday evenings, weekend mornings)\", \"Audience age range suggests household purchasing decision-makers\", \"Recipe-integrated sponsored content historically performs better than standalone ads\"]}"
+  },
+  {
+    "input": "TikTok, Notes: vegan cooking, 30-50 age audience",
+    "output": "{\"overall_score\": 63, \"engagement_score\": 51, \"audience_score\": 72, \"brand_fit_score\": 69, \"summary\": \"Highly credible vegan cooking creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 30-50 viewers.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Audience growth rate over the past quarter suggests accelerating momentum\", \"Audience demographics strongly match the 30-50 target range with high retention\", \"Sponsored content performance reaches 69% of organic posts, indicating moderate brand trust\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: luxury lifestyle, 25-45 age audience",
+    "output": "{\"overall_score\": 55, \"engagement_score\": 57, \"audience_score\": 50, \"brand_fit_score\": 56, \"summary\": \"Niche luxury lifestyle specialist whose 25-45 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Content format favors live sessions, which supports detailed product storytelling\", \"Average engagement of 5.6% over the last 30 days, below category average\", \"Sponsored content performance reaches 73% of organic posts, indicating growing brand trust\"]}"
+  },
+  {
+    "input": "Instagram, Notes: crypto and investing, 18-25 age audience",
+    "output": "{\"overall_score\": 81, \"engagement_score\": 92, \"audience_score\": 76, \"brand_fit_score\": 70, \"summary\": \"Established crypto and investing voice with a loyal 18-25 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Comment sentiment analysis shows a positive response to product-related posts\", \"Audience growth rate over the past quarter suggests steady momentum\", \"Content format favors carousel posts, which supports detailed product storytelling\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "TikTok, Notes: automotive content, 13-17 age audience",
+    "output": "{\"overall_score\": 86, \"engagement_score\": 75, \"audience_score\": 92, \"brand_fit_score\": 88, \"summary\": \"Reliable automotive content creator with steady engagement, well-suited for brands targeting 13-17 audiences interested in this category.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Comment sentiment analysis shows an enthusiastic response to product-related posts\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\"]}"
+  },
+  {
+    "input": "YouTube, Notes: skincare content, 35-55 age audience",
+    "output": "{\"overall_score\": 66, \"engagement_score\": 70, \"audience_score\": 76, \"brand_fit_score\": 66, \"summary\": \"Established skincare voice with a loyal 35-55 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Average engagement of 5.9% over the last 30 days, above category average\", \"Comment sentiment analysis shows a largely positive response to product-related posts\", \"Peak engagement windows align with weekend mornings, useful for scheduling campaign posts\"]}"
+  },
+  {
+    "input": "Twitter, Notes: book and reading, 35-55 age audience",
+    "output": "{\"overall_score\": 70, \"engagement_score\": 69, \"audience_score\": 68, \"brand_fit_score\": 68, \"summary\": \"Reliable book and reading content creator with steady engagement, well-suited for brands targeting 35-55 audiences interested in this category.\", \"insights\": [\"Audience growth rate over the past quarter suggests steady momentum\", \"Comment sentiment analysis shows a mixed but constructive response to product-related posts\", \"Sponsored content performance reaches 55% of organic posts, indicating growing brand trust\", \"Peak engagement windows align with weekend mornings, useful for scheduling campaign posts\"]}"
+  },
+  {
+    "input": "Twitter, Notes: fashion and style, 18-25 age audience",
+    "output": "{\"overall_score\": 87, \"engagement_score\": 94, \"audience_score\": 86, \"brand_fit_score\": 97, \"summary\": \"A high-energy fashion and style creator with solid engagement rates among 18-25 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Audience growth rate over the past quarter suggests accelerating momentum\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Peak engagement windows align with weekend mornings, useful for scheduling campaign posts\"]}"
+  },
+  {
+    "input": "Instagram, Notes: plant and gardening, 25-45 age audience",
+    "output": "{\"overall_score\": 90, \"engagement_score\": 90, \"audience_score\": 97, \"brand_fit_score\": 99, \"summary\": \"Highly credible plant and gardening creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 25-45 viewers.\", \"insights\": [\"Content format favors short-form video, which supports detailed product storytelling\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Historical brand collaborations in this niche have shown consistent completion rates\"]}"
+  },
+  {
+    "input": "Instagram, Notes: makeup tutorials, 20-40 age audience",
+    "output": "{\"overall_score\": 64, \"engagement_score\": 54, \"audience_score\": 64, \"brand_fit_score\": 68, \"summary\": \"Niche makeup tutorials specialist whose 20-40 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Content format favors long-form video, which supports detailed product storytelling\", \"Peak engagement windows align with weekday evenings, useful for scheduling campaign posts\", \"Audience growth rate over the past quarter suggests accelerating momentum\", \"Average engagement of 2.9% over the last 30 days, below category average\"]}"
+  },
+  {
+    "input": "Twitter, Notes: business and entrepreneurship, 18-24 age audience",
+    "output": "{\"overall_score\": 90, \"engagement_score\": 89, \"audience_score\": 99, \"brand_fit_score\": 87, \"summary\": \"This influencer shows strong alignment with business and entrepreneurship brands targeting 18-24 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Content format favors short-form video, which supports detailed product storytelling\", \"Average engagement of 5.0% over the last 30 days, above category average\", \"Audience demographics strongly match the 18-24 target range with high retention\", \"Audience growth rate over the past quarter suggests modest but consistent momentum\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: tech reviews, 30-50 age audience",
+    "output": "{\"overall_score\": 57, \"engagement_score\": 51, \"audience_score\": 60, \"brand_fit_score\": 50, \"summary\": \"Well-rounded tech reviews content creator with appeal across the 30-50 range, suitable for diverse brand categories related to this niche.\", \"insights\": [\"Historical brand collaborations in this niche have shown consistent completion rates\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Content format favors short-form video, which supports detailed product storytelling\", \"Sponsored content performance reaches 78% of organic posts, indicating solid brand trust\"]}"
+  },
+  {
+    "input": "Twitter, Notes: skincare content, 18-25 age audience",
+    "output": "{\"overall_score\": 77, \"engagement_score\": 65, \"audience_score\": 72, \"brand_fit_score\": 82, \"summary\": \"Established skincare voice with a loyal 18-25 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Peak engagement windows align with late evenings, useful for scheduling campaign posts\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Audience growth rate over the past quarter suggests accelerating momentum\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: budget travel, 30-50 age audience",
+    "output": "{\"overall_score\": 77, \"engagement_score\": 66, \"audience_score\": 75, \"brand_fit_score\": 71, \"summary\": \"A high-energy budget travel creator with solid engagement rates among 30-50 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Average engagement of 2.2% over the last 30 days, slightly above category average\", \"Audience growth rate over the past quarter suggests steady momentum\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Follower-to-following ratio indicates an organically built, credible audience base\"]}"
+  },
+  {
+    "input": "Instagram, Notes: food and cooking, 25-35 age audience",
+    "output": "{\"overall_score\": 70, \"engagement_score\": 78, \"audience_score\": 61, \"brand_fit_score\": 70, \"summary\": \"Niche food and cooking specialist whose 25-35 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Geographic distribution of followers may require region-specific campaign messaging\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: skateboarding, 25-35 age audience",
+    "output": "{\"overall_score\": 74, \"engagement_score\": 63, \"audience_score\": 85, \"brand_fit_score\": 78, \"summary\": \"Highly credible skateboarding creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 25-35 viewers.\", \"insights\": [\"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Peak engagement windows align with weekend afternoons, useful for scheduling campaign posts\", \"Content format favors short-form video, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: education and study tips, 20-40 age audience",
+    "output": "{\"overall_score\": 75, \"engagement_score\": 82, \"audience_score\": 78, \"brand_fit_score\": 76, \"summary\": \"Well-rounded education and study tips content creator with appeal across the 20-40 range, suitable for diverse brand categories related to this niche.\", \"insights\": [\"Audience growth rate over the past quarter suggests modest but consistent momentum\", \"Average engagement of 4.2% over the last 30 days, below category average\", \"Content format favors long-form video, which supports detailed product storytelling\", \"Peak engagement windows align with weekend mornings, useful for scheduling campaign posts\"]}"
+  },
+  {
+    "input": "YouTube, Notes: comedy and sketches, 30-45 age audience",
+    "output": "{\"overall_score\": 81, \"engagement_score\": 83, \"audience_score\": 87, \"brand_fit_score\": 73, \"summary\": \"Established comedy and sketches voice with a loyal 30-45 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Average engagement of 3.8% over the last 30 days, below category average\", \"Comment sentiment analysis shows an enthusiastic response to product-related posts\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: music and entertainment, 13-17 age audience",
+    "output": "{\"overall_score\": 79, \"engagement_score\": 85, \"audience_score\": 88, \"brand_fit_score\": 86, \"summary\": \"This influencer shows strong alignment with music and entertainment brands targeting 13-17 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Average engagement of 8.6% over the last 30 days, below category average\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Audience demographics strongly match the 13-17 target range with high retention\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: budget travel, 25-35 age audience",
+    "output": "{\"overall_score\": 85, \"engagement_score\": 77, \"audience_score\": 97, \"brand_fit_score\": 92, \"summary\": \"Highly credible budget travel creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 25-35 viewers.\", \"insights\": [\"Historical brand collaborations in this niche have shown consistent completion rates\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Comment sentiment analysis shows a mixed but constructive response to product-related posts\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: comedy and sketches, 30-45 age audience",
+    "output": "{\"overall_score\": 78, \"engagement_score\": 79, \"audience_score\": 83, \"brand_fit_score\": 80, \"summary\": \"A high-energy comedy and sketches creator with solid engagement rates among 30-45 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Geographic distribution of followers may require region-specific campaign messaging\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Sponsored content performance reaches 75% of organic posts, indicating moderate brand trust\", \"Average engagement of 8.0% over the last 30 days, slightly above category average\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: camping and hiking, 30-50 age audience",
+    "output": "{\"overall_score\": 71, \"engagement_score\": 73, \"audience_score\": 79, \"brand_fit_score\": 77, \"summary\": \"Established camping and hiking voice with a loyal 30-50 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Content format favors static image posts, which supports detailed product storytelling\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Comment sentiment analysis shows an enthusiastic response to product-related posts\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: plant and gardening, 30-45 age audience",
+    "output": "{\"overall_score\": 86, \"engagement_score\": 94, \"audience_score\": 96, \"brand_fit_score\": 89, \"summary\": \"Niche plant and gardening specialist whose 30-45 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Average engagement of 3.3% over the last 30 days, in line with category average\", \"Audience demographics strongly match the 30-45 target range with high retention\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "YouTube, Notes: watch collecting, 20-30 age audience",
+    "output": "{\"overall_score\": 81, \"engagement_score\": 70, \"audience_score\": 91, \"brand_fit_score\": 76, \"summary\": \"A high-energy watch collecting creator with solid engagement rates among 20-30 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Average engagement of 7.3% over the last 30 days, above category average\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Content format favors static image posts, which supports detailed product storytelling\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "YouTube, Notes: tech reviews, 20-30 age audience",
+    "output": "{\"overall_score\": 81, \"engagement_score\": 66, \"audience_score\": 71, \"brand_fit_score\": 85, \"summary\": \"Reliable tech reviews content creator with steady engagement, well-suited for brands targeting 20-30 audiences interested in this category.\", \"insights\": [\"Sponsored content performance reaches 56% of organic posts, indicating solid brand trust\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Content format favors live sessions, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "Instagram, Notes: crypto and investing, 13-17 age audience",
+    "output": "{\"overall_score\": 71, \"engagement_score\": 82, \"audience_score\": 72, \"brand_fit_score\": 67, \"summary\": \"Established crypto and investing voice with a loyal 13-17 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Audience demographics strongly match the 13-17 target range with high retention\", \"Peak engagement windows align with midweek afternoons, useful for scheduling campaign posts\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: sports and outdoor, 20-30 age audience",
+    "output": "{\"overall_score\": 90, \"engagement_score\": 90, \"audience_score\": 81, \"brand_fit_score\": 98, \"summary\": \"This influencer shows strong alignment with sports and outdoor brands targeting 20-30 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Average engagement of 7.3% over the last 30 days, above category average\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Audience growth rate over the past quarter suggests steady momentum\"]}"
+  },
+  {
+    "input": "TikTok, Notes: sustainable living, 18-24 age audience",
+    "output": "{\"overall_score\": 72, \"engagement_score\": 58, \"audience_score\": 64, \"brand_fit_score\": 81, \"summary\": \"Reliable sustainable living content creator with steady engagement, well-suited for brands targeting 18-24 audiences interested in this category.\", \"insights\": [\"Sponsored content performance reaches 57% of organic posts, indicating moderate brand trust\", \"Peak engagement windows align with weekday evenings, useful for scheduling campaign posts\", \"Audience demographics strongly match the 18-24 target range with high retention\", \"Comment sentiment analysis shows a mixed but constructive response to product-related posts\"]}"
+  },
+  {
+    "input": "Twitter, Notes: makeup tutorials, 25-45 age audience",
+    "output": "{\"overall_score\": 65, \"engagement_score\": 68, \"audience_score\": 62, \"brand_fit_score\": 71, \"summary\": \"Established makeup tutorials voice with a loyal 25-45 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Audience demographics strongly match the 25-45 target range with high retention\", \"Peak engagement windows align with weekday evenings, useful for scheduling campaign posts\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Follower-to-following ratio indicates an organically built, credible audience base\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: camping and hiking, 35-55 age audience",
+    "output": "{\"overall_score\": 76, \"engagement_score\": 80, \"audience_score\": 85, \"brand_fit_score\": 83, \"summary\": \"Established camping and hiking voice with a loyal 35-55 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Content format favors carousel posts, which supports detailed product storytelling\", \"Peak engagement windows align with late evenings, useful for scheduling campaign posts\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Sponsored content performance reaches 56% of organic posts, indicating growing brand trust\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: sports and outdoor, 25-35 age audience",
+    "output": "{\"overall_score\": 92, \"engagement_score\": 98, \"audience_score\": 94, \"brand_fit_score\": 82, \"summary\": \"Reliable sports and outdoor content creator with steady engagement, well-suited for brands targeting 25-35 audiences interested in this category.\", \"insights\": [\"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Audience demographics strongly match the 25-35 target range with high retention\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: interior design, 20-30 age audience",
+    "output": "{\"overall_score\": 55, \"engagement_score\": 49, \"audience_score\": 59, \"brand_fit_score\": 54, \"summary\": \"Reliable interior design content creator with steady engagement, well-suited for brands targeting 20-30 audiences interested in this category.\", \"insights\": [\"Average engagement of 2.8% over the last 30 days, above category average\", \"Audience demographics strongly match the 20-30 target range with high retention\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Content format favors short-form video, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "Instagram, Notes: personal finance, 35-55 age audience",
+    "output": "{\"overall_score\": 60, \"engagement_score\": 64, \"audience_score\": 69, \"brand_fit_score\": 58, \"summary\": \"Established personal finance voice with a loyal 35-55 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Sponsored content performance reaches 79% of organic posts, indicating strong brand trust\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Comment sentiment analysis shows a largely positive response to product-related posts\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: budget travel, 20-30 age audience",
+    "output": "{\"overall_score\": 72, \"engagement_score\": 72, \"audience_score\": 66, \"brand_fit_score\": 62, \"summary\": \"Well-rounded budget travel content creator with appeal across the 20-30 range, suitable for diverse brand categories related to this niche.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Audience growth rate over the past quarter suggests modest but consistent momentum\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\"]}"
+  },
+  {
+    "input": "Twitter, Notes: education and study tips, 35-55 age audience",
+    "output": "{\"overall_score\": 84, \"engagement_score\": 72, \"audience_score\": 78, \"brand_fit_score\": 81, \"summary\": \"This influencer shows strong alignment with education and study tips brands targeting 35-55 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Sponsored content performance reaches 79% of organic posts, indicating growing brand trust\", \"Comment sentiment analysis shows an enthusiastic response to product-related posts\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\"]}"
+  },
+  {
+    "input": "Instagram, Notes: art and design, 20-30 age audience",
+    "output": "{\"overall_score\": 85, \"engagement_score\": 80, \"audience_score\": 80, \"brand_fit_score\": 85, \"summary\": \"Emerging art and design creator showing growing momentum with the 20-30 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Audience demographics strongly match the 20-30 target range with high retention\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Content format favors carousel posts, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: skincare content, 20-40 age audience",
+    "output": "{\"overall_score\": 66, \"engagement_score\": 72, \"audience_score\": 73, \"brand_fit_score\": 54, \"summary\": \"Niche skincare specialist whose 20-40 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Historical brand collaborations in this niche have shown consistent completion rates\", \"Comment sentiment analysis shows a positive response to product-related posts\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Follower-to-following ratio indicates an organically built, credible audience base\"]}"
+  },
+  {
+    "input": "Twitter, Notes: coffee and cafe culture, 25-45 age audience",
+    "output": "{\"overall_score\": 64, \"engagement_score\": 71, \"audience_score\": 67, \"brand_fit_score\": 64, \"summary\": \"A high-energy coffee and cafe culture creator with solid engagement rates among 25-45 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Content format favors carousel posts, which supports detailed product storytelling\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Audience demographics strongly match the 25-45 target range with high retention\"]}"
+  },
+  {
+    "input": "TikTok, Notes: personal finance, 20-30 age audience",
+    "output": "{\"overall_score\": 61, \"engagement_score\": 70, \"audience_score\": 58, \"brand_fit_score\": 70, \"summary\": \"Emerging personal finance creator showing growing momentum with the 20-30 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Audience demographics strongly match the 20-30 target range with high retention\", \"Comment sentiment analysis shows a mixed but constructive response to product-related posts\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Content format favors short-form video, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "TikTok, Notes: makeup tutorials, 20-40 age audience",
+    "output": "{\"overall_score\": 88, \"engagement_score\": 90, \"audience_score\": 96, \"brand_fit_score\": 98, \"summary\": \"Highly credible makeup tutorials creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 20-40 viewers.\", \"insights\": [\"Comment sentiment analysis shows a mixed but constructive response to product-related posts\", \"Peak engagement windows align with weekday evenings, useful for scheduling campaign posts\", \"Audience demographics strongly match the 20-40 target range with high retention\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "Twitter, Notes: luxury lifestyle, 25-35 age audience",
+    "output": "{\"overall_score\": 64, \"engagement_score\": 60, \"audience_score\": 63, \"brand_fit_score\": 62, \"summary\": \"Niche luxury lifestyle specialist whose 25-35 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Audience demographics strongly match the 25-35 target range with high retention\", \"Comment sentiment analysis shows an enthusiastic response to product-related posts\", \"Average engagement of 7.9% over the last 30 days, slightly below category average\"]}"
+  },
+  {
+    "input": "YouTube, Notes: interior design, 13-17 age audience",
+    "output": "{\"overall_score\": 62, \"engagement_score\": 47, \"audience_score\": 62, \"brand_fit_score\": 70, \"summary\": \"A high-energy interior design creator with solid engagement rates among 13-17 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Peak engagement windows align with midweek afternoons, useful for scheduling campaign posts\", \"Sponsored content performance reaches 70% of organic posts, indicating moderate brand trust\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "TikTok, Notes: fashion and style, 25-45 age audience",
+    "output": "{\"overall_score\": 82, \"engagement_score\": 79, \"audience_score\": 72, \"brand_fit_score\": 89, \"summary\": \"Highly credible fashion and style creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 25-45 viewers.\", \"insights\": [\"Geographic distribution of followers may require region-specific campaign messaging\", \"Audience demographics strongly match the 25-45 target range with high retention\", \"Content format favors short-form video, which supports detailed product storytelling\", \"Sponsored content performance reaches 79% of organic posts, indicating strong brand trust\"]}"
+  },
+  {
+    "input": "Twitter, Notes: tech reviews, 30-45 age audience",
+    "output": "{\"overall_score\": 78, \"engagement_score\": 73, \"audience_score\": 74, \"brand_fit_score\": 80, \"summary\": \"A high-energy tech reviews creator with solid engagement rates among 30-45 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Audience demographics strongly match the 30-45 target range with high retention\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Audience growth rate over the past quarter suggests accelerating momentum\"]}"
+  },
+  {
+    "input": "TikTok, Notes: luxury lifestyle, 35-55 age audience",
+    "output": "{\"overall_score\": 66, \"engagement_score\": 77, \"audience_score\": 77, \"brand_fit_score\": 76, \"summary\": \"Reliable luxury lifestyle content creator with steady engagement, well-suited for brands targeting 35-55 audiences interested in this category.\", \"insights\": [\"Audience demographics strongly match the 35-55 target range with high retention\", \"Sponsored content performance reaches 60% of organic posts, indicating moderate brand trust\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Historical brand collaborations in this niche have shown consistent completion rates\"]}"
+  },
+  {
+    "input": "Twitter, Notes: interior design, 30-50 age audience",
+    "output": "{\"overall_score\": 87, \"engagement_score\": 84, \"audience_score\": 90, \"brand_fit_score\": 94, \"summary\": \"Well-rounded interior design content creator with appeal across the 30-50 range, suitable for diverse brand categories related to this niche.\", \"insights\": [\"Comment sentiment analysis shows a largely positive response to product-related posts\", \"Sponsored content performance reaches 66% of organic posts, indicating solid brand trust\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Cross-platform presence adds extra reach potential beyond the primary channel\"]}"
+  },
+  {
+    "input": "Twitter, Notes: home decor and DIY, 20-30 age audience",
+    "output": "{\"overall_score\": 83, \"engagement_score\": 87, \"audience_score\": 74, \"brand_fit_score\": 82, \"summary\": \"This influencer shows strong alignment with home decor and DIY brands targeting 20-30 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Audience growth rate over the past quarter suggests accelerating momentum\", \"Sponsored content performance reaches 79% of organic posts, indicating solid brand trust\", \"Audience demographics strongly match the 20-30 target range with high retention\", \"Average engagement of 5.6% over the last 30 days, below category average\"]}"
+  },
+  {
+    "input": "Instagram, Notes: coffee and cafe culture, 35-55 age audience",
+    "output": "{\"overall_score\": 69, \"engagement_score\": 63, \"audience_score\": 60, \"brand_fit_score\": 65, \"summary\": \"Highly credible coffee and cafe culture creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 35-55 viewers.\", \"insights\": [\"Content format favors carousel posts, which supports detailed product storytelling\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Average engagement of 6.0% over the last 30 days, below category average\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: coffee and cafe culture, 20-30 age audience",
+    "output": "{\"overall_score\": 83, \"engagement_score\": 85, \"audience_score\": 79, \"brand_fit_score\": 84, \"summary\": \"A high-energy coffee and cafe culture creator with solid engagement rates among 20-30 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Audience growth rate over the past quarter suggests modest but consistent momentum\", \"Audience demographics strongly match the 20-30 target range with high retention\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "YouTube, Notes: fashion and style, 25-45 age audience",
+    "output": "{\"overall_score\": 92, \"engagement_score\": 99, \"audience_score\": 93, \"brand_fit_score\": 99, \"summary\": \"Established fashion and style voice with a loyal 25-45 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Comment sentiment analysis shows a positive response to product-related posts\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Content format favors live sessions, which supports detailed product storytelling\", \"Sponsored content performance reaches 68% of organic posts, indicating moderate brand trust\"]}"
+  },
+  {
+    "input": "Twitter, Notes: sports and outdoor, 18-25 age audience",
+    "output": "{\"overall_score\": 75, \"engagement_score\": 82, \"audience_score\": 74, \"brand_fit_score\": 72, \"summary\": \"Reliable sports and outdoor content creator with steady engagement, well-suited for brands targeting 18-25 audiences interested in this category.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Sponsored content performance reaches 61% of organic posts, indicating moderate brand trust\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Historical brand collaborations in this niche have shown consistent completion rates\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: sustainable living, 20-30 age audience",
+    "output": "{\"overall_score\": 75, \"engagement_score\": 86, \"audience_score\": 72, \"brand_fit_score\": 84, \"summary\": \"Established sustainable living voice with a loyal 20-30 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Peak engagement windows align with late evenings, useful for scheduling campaign posts\", \"Content format favors short-form video, which supports detailed product storytelling\", \"Comment sentiment analysis shows an enthusiastic response to product-related posts\", \"Cross-platform presence adds extra reach potential beyond the primary channel\"]}"
+  },
+  {
+    "input": "Twitter, Notes: mental health and wellness, 30-45 age audience",
+    "output": "{\"overall_score\": 84, \"engagement_score\": 84, \"audience_score\": 84, \"brand_fit_score\": 90, \"summary\": \"This influencer shows strong alignment with mental health and wellness brands targeting 30-45 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Peak engagement windows align with weekend afternoons, useful for scheduling campaign posts\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Audience growth rate over the past quarter suggests accelerating momentum\", \"Comment sentiment analysis shows a positive response to product-related posts\"]}"
+  },
+  {
+    "input": "TikTok, Notes: education and study tips, 35-55 age audience",
+    "output": "{\"overall_score\": 75, \"engagement_score\": 86, \"audience_score\": 74, \"brand_fit_score\": 73, \"summary\": \"Well-rounded education and study tips content creator with appeal across the 35-55 range, suitable for diverse brand categories related to this niche.\", \"insights\": [\"Audience demographics strongly match the 35-55 target range with high retention\", \"Sponsored content performance reaches 76% of organic posts, indicating strong brand trust\", \"Audience growth rate over the past quarter suggests accelerating momentum\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "Instagram, Notes: automotive content, 13-17 age audience",
+    "output": "{\"overall_score\": 55, \"engagement_score\": 53, \"audience_score\": 51, \"brand_fit_score\": 65, \"summary\": \"Well-rounded automotive content creator with appeal across the 13-17 range, suitable for diverse brand categories related to this niche.\", \"insights\": [\"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Sponsored content performance reaches 65% of organic posts, indicating growing brand trust\", \"Average engagement of 8.6% over the last 30 days, in line with category average\"]}"
+  },
+  {
+    "input": "TikTok, Notes: baking and pastry, 20-30 age audience",
+    "output": "{\"overall_score\": 80, \"engagement_score\": 85, \"audience_score\": 79, \"brand_fit_score\": 90, \"summary\": \"Highly credible baking and pastry creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 20-30 viewers.\", \"insights\": [\"Geographic distribution of followers may require region-specific campaign messaging\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Content format favors long-form video, which supports detailed product storytelling\", \"Audience growth rate over the past quarter suggests steady momentum\"]}"
+  },
+  {
+    "input": "Twitter, Notes: parenting and family, 30-50 age audience",
+    "output": "{\"overall_score\": 55, \"engagement_score\": 40, \"audience_score\": 67, \"brand_fit_score\": 53, \"summary\": \"A high-energy parenting and family creator with solid engagement rates among 30-50 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Audience demographics strongly match the 30-50 target range with high retention\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Cross-platform presence adds extra reach potential beyond the primary channel\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: pet content, 20-40 age audience",
+    "output": "{\"overall_score\": 78, \"engagement_score\": 72, \"audience_score\": 72, \"brand_fit_score\": 78, \"summary\": \"Well-rounded pet content creator with appeal across the 20-40 range, suitable for diverse brand categories related to this niche.\", \"insights\": [\"Historical brand collaborations in this niche have shown consistent completion rates\", \"Sponsored content performance reaches 59% of organic posts, indicating strong brand trust\", \"Peak engagement windows align with late evenings, useful for scheduling campaign posts\", \"Audience growth rate over the past quarter suggests modest but consistent momentum\"]}"
+  },
+  {
+    "input": "YouTube, Notes: skateboarding, 30-45 age audience",
+    "output": "{\"overall_score\": 68, \"engagement_score\": 55, \"audience_score\": 61, \"brand_fit_score\": 60, \"summary\": \"A high-energy skateboarding creator with solid engagement rates among 30-45 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Historical brand collaborations in this niche have shown consistent completion rates\", \"Audience demographics strongly match the 30-45 target range with high retention\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Content format favors carousel posts, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: food and cooking, 25-35 age audience",
+    "output": "{\"overall_score\": 73, \"engagement_score\": 82, \"audience_score\": 85, \"brand_fit_score\": 61, \"summary\": \"Reliable food and cooking content creator with steady engagement, well-suited for brands targeting 25-35 audiences interested in this category.\", \"insights\": [\"Audience growth rate over the past quarter suggests steady momentum\", \"Peak engagement windows align with midweek afternoons, useful for scheduling campaign posts\", \"Audience demographics strongly match the 25-35 target range with high retention\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\"]}"
+  },
+  {
+    "input": "TikTok, Notes: travel and lifestyle, 18-24 age audience",
+    "output": "{\"overall_score\": 86, \"engagement_score\": 91, \"audience_score\": 95, \"brand_fit_score\": 76, \"summary\": \"This influencer shows strong alignment with travel and lifestyle brands targeting 18-24 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Audience demographics strongly match the 18-24 target range with high retention\", \"Average engagement of 9.4% over the last 30 days, in line with category average\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Follower-to-following ratio indicates an organically built, credible audience base\"]}"
+  },
+  {
+    "input": "YouTube, Notes: personal finance, 25-45 age audience",
+    "output": "{\"overall_score\": 55, \"engagement_score\": 48, \"audience_score\": 51, \"brand_fit_score\": 44, \"summary\": \"This influencer shows strong alignment with personal finance brands targeting 25-45 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Historical brand collaborations in this niche have shown consistent completion rates\", \"Content format favors short-form video, which supports detailed product storytelling\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Sponsored content performance reaches 87% of organic posts, indicating growing brand trust\"]}"
+  },
+  {
+    "input": "TikTok, Notes: skincare content, 18-25 age audience",
+    "output": "{\"overall_score\": 72, \"engagement_score\": 59, \"audience_score\": 71, \"brand_fit_score\": 62, \"summary\": \"Highly credible skincare creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 18-25 viewers.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Peak engagement windows align with weekend afternoons, useful for scheduling campaign posts\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Average engagement of 9.3% over the last 30 days, below category average\"]}"
+  },
+  {
+    "input": "YouTube, Notes: baking and pastry, 30-45 age audience",
+    "output": "{\"overall_score\": 70, \"engagement_score\": 57, \"audience_score\": 73, \"brand_fit_score\": 61, \"summary\": \"Niche baking and pastry specialist whose 30-45 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Sponsored content performance reaches 74% of organic posts, indicating moderate brand trust\", \"Audience growth rate over the past quarter suggests strong momentum\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Content format favors short-form video, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: plant and gardening, 20-30 age audience",
+    "output": "{\"overall_score\": 88, \"engagement_score\": 98, \"audience_score\": 86, \"brand_fit_score\": 81, \"summary\": \"Emerging plant and gardening creator showing growing momentum with the 20-30 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Audience demographics strongly match the 20-30 target range with high retention\", \"Comment sentiment analysis shows a mixed but constructive response to product-related posts\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Follower-to-following ratio indicates an organically built, credible audience base\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: car detailing, 30-50 age audience",
+    "output": "{\"overall_score\": 86, \"engagement_score\": 85, \"audience_score\": 92, \"brand_fit_score\": 85, \"summary\": \"This influencer shows strong alignment with car detailing brands targeting 30-50 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Historical brand collaborations in this niche have shown consistent completion rates\", \"Audience demographics strongly match the 30-50 target range with high retention\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Content format favors live sessions, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: beauty and makeup, 25-45 age audience",
+    "output": "{\"overall_score\": 55, \"engagement_score\": 41, \"audience_score\": 45, \"brand_fit_score\": 50, \"summary\": \"This influencer shows strong alignment with beauty and makeup brands targeting 25-45 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Peak engagement windows align with weekend afternoons, useful for scheduling campaign posts\", \"Follower-to-following ratio indicates an organically built, credible audience base\"]}"
+  },
+  {
+    "input": "TikTok, Notes: plant and gardening, 30-45 age audience",
+    "output": "{\"overall_score\": 72, \"engagement_score\": 83, \"audience_score\": 64, \"brand_fit_score\": 78, \"summary\": \"Emerging plant and gardening creator showing growing momentum with the 30-45 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Comment sentiment analysis shows a positive response to product-related posts\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Audience demographics strongly match the 30-45 target range with high retention\"]}"
+  },
+  {
+    "input": "Twitter, Notes: photography, 18-25 age audience",
+    "output": "{\"overall_score\": 90, \"engagement_score\": 89, \"audience_score\": 80, \"brand_fit_score\": 89, \"summary\": \"Highly credible photography creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 18-25 viewers.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Content format favors long-form video, which supports detailed product storytelling\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Sponsored content performance reaches 70% of organic posts, indicating solid brand trust\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: running and marathon training, 18-24 age audience",
+    "output": "{\"overall_score\": 55, \"engagement_score\": 53, \"audience_score\": 45, \"brand_fit_score\": 50, \"summary\": \"Emerging running and marathon training creator showing growing momentum with the 18-24 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Content format favors long-form video, which supports detailed product storytelling\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Peak engagement windows align with midweek afternoons, useful for scheduling campaign posts\", \"Audience growth rate over the past quarter suggests steady momentum\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: running and marathon training, 18-25 age audience",
+    "output": "{\"overall_score\": 58, \"engagement_score\": 47, \"audience_score\": 70, \"brand_fit_score\": 54, \"summary\": \"A high-energy running and marathon training creator with solid engagement rates among 18-25 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Audience demographics strongly match the 18-25 target range with high retention\", \"Content format favors live sessions, which supports detailed product storytelling\", \"Sponsored content performance reaches 88% of organic posts, indicating solid brand trust\", \"Peak engagement windows align with late evenings, useful for scheduling campaign posts\"]}"
+  },
+  {
+    "input": "Instagram, Notes: language learning, 30-50 age audience",
+    "output": "{\"overall_score\": 59, \"engagement_score\": 62, \"audience_score\": 67, \"brand_fit_score\": 48, \"summary\": \"Established language learning voice with a loyal 30-50 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Audience growth rate over the past quarter suggests accelerating momentum\", \"Comment sentiment analysis shows a mixed but constructive response to product-related posts\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: yoga and meditation, 25-45 age audience",
+    "output": "{\"overall_score\": 59, \"engagement_score\": 50, \"audience_score\": 53, \"brand_fit_score\": 65, \"summary\": \"A high-energy yoga and meditation creator with solid engagement rates among 25-45 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Audience growth rate over the past quarter suggests steady momentum\", \"Comment sentiment analysis shows a mixed but constructive response to product-related posts\"]}"
+  },
+  {
+    "input": "Instagram, Notes: automotive content, 30-50 age audience",
+    "output": "{\"overall_score\": 84, \"engagement_score\": 77, \"audience_score\": 77, \"brand_fit_score\": 74, \"summary\": \"Well-rounded automotive content creator with appeal across the 30-50 range, suitable for diverse brand categories related to this niche.\", \"insights\": [\"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Peak engagement windows align with weekend mornings, useful for scheduling campaign posts\", \"Content format favors long-form video, which supports detailed product storytelling\", \"Average engagement of 8.1% over the last 30 days, in line with category average\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: skincare content, 30-50 age audience",
+    "output": "{\"overall_score\": 74, \"engagement_score\": 67, \"audience_score\": 69, \"brand_fit_score\": 62, \"summary\": \"Established skincare voice with a loyal 30-50 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Audience demographics strongly match the 30-50 target range with high retention\", \"Average engagement of 8.4% over the last 30 days, slightly below category average\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\"]}"
+  },
+  {
+    "input": "YouTube, Notes: fashion and style, 18-25 age audience",
+    "output": "{\"overall_score\": 63, \"engagement_score\": 54, \"audience_score\": 65, \"brand_fit_score\": 62, \"summary\": \"A high-energy fashion and style creator with solid engagement rates among 18-25 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Audience demographics strongly match the 18-25 target range with high retention\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Average engagement of 6.4% over the last 30 days, in line with category average\"]}"
+  },
+  {
+    "input": "YouTube, Notes: yoga and meditation, 25-45 age audience",
+    "output": "{\"overall_score\": 84, \"engagement_score\": 70, \"audience_score\": 79, \"brand_fit_score\": 90, \"summary\": \"Established yoga and meditation voice with a loyal 25-45 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Sponsored content performance reaches 86% of organic posts, indicating strong brand trust\", \"Comment sentiment analysis shows an enthusiastic response to product-related posts\", \"Geographic distribution of followers may require region-specific campaign messaging\"]}"
+  },
+  {
+    "input": "Twitter, Notes: education and study tips, 30-50 age audience",
+    "output": "{\"overall_score\": 83, \"engagement_score\": 72, \"audience_score\": 74, \"brand_fit_score\": 90, \"summary\": \"Highly credible education and study tips creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 30-50 viewers.\", \"insights\": [\"Sponsored content performance reaches 81% of organic posts, indicating solid brand trust\", \"Peak engagement windows align with weekday evenings, useful for scheduling campaign posts\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Content format favors static image posts, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: interior design, 13-17 age audience",
+    "output": "{\"overall_score\": 70, \"engagement_score\": 75, \"audience_score\": 77, \"brand_fit_score\": 58, \"summary\": \"Established interior design voice with a loyal 13-17 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Comment sentiment analysis shows a mixed but constructive response to product-related posts\", \"Sponsored content performance reaches 85% of organic posts, indicating solid brand trust\", \"Average engagement of 7.9% over the last 30 days, in line with category average\", \"Cross-platform presence adds extra reach potential beyond the primary channel\"]}"
+  },
+  {
+    "input": "Instagram, Notes: personal finance, 18-24 age audience",
+    "output": "{\"overall_score\": 69, \"engagement_score\": 54, \"audience_score\": 67, \"brand_fit_score\": 58, \"summary\": \"Niche personal finance specialist whose 18-24 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Content format favors carousel posts, which supports detailed product storytelling\", \"Average engagement of 6.0% over the last 30 days, slightly below category average\", \"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Peak engagement windows align with weekend mornings, useful for scheduling campaign posts\"]}"
+  },
+  {
+    "input": "Instagram, Notes: skincare content, 20-40 age audience",
+    "output": "{\"overall_score\": 77, \"engagement_score\": 88, \"audience_score\": 72, \"brand_fit_score\": 70, \"summary\": \"Highly credible skincare creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 20-40 viewers.\", \"insights\": [\"Content format favors static image posts, which supports detailed product storytelling\", \"Comment sentiment analysis shows a largely positive response to product-related posts\", \"Sponsored content performance reaches 56% of organic posts, indicating growing brand trust\", \"Audience growth rate over the past quarter suggests strong momentum\"]}"
+  },
+  {
+    "input": "TikTok, Notes: car detailing, 30-45 age audience",
+    "output": "{\"overall_score\": 57, \"engagement_score\": 44, \"audience_score\": 48, \"brand_fit_score\": 52, \"summary\": \"Highly credible car detailing creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 30-45 viewers.\", \"insights\": [\"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Average engagement of 2.1% over the last 30 days, slightly above category average\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Sponsored content performance reaches 55% of organic posts, indicating growing brand trust\"]}"
+  },
+  {
+    "input": "TikTok, Notes: automotive content, 20-30 age audience",
+    "output": "{\"overall_score\": 92, \"engagement_score\": 99, \"audience_score\": 86, \"brand_fit_score\": 83, \"summary\": \"Emerging automotive creator showing growing momentum with the 20-30 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Sponsored content performance reaches 80% of organic posts, indicating strong brand trust\", \"Peak engagement windows align with midweek afternoons, useful for scheduling campaign posts\", \"Audience growth rate over the past quarter suggests modest but consistent momentum\", \"Cross-platform presence adds extra reach potential beyond the primary channel\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: sustainable living, 20-30 age audience",
+    "output": "{\"overall_score\": 66, \"engagement_score\": 73, \"audience_score\": 73, \"brand_fit_score\": 76, \"summary\": \"Emerging sustainable living creator showing growing momentum with the 20-30 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Average engagement of 3.7% over the last 30 days, slightly below category average\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Peak engagement windows align with midweek afternoons, useful for scheduling campaign posts\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: budget travel, 18-24 age audience",
+    "output": "{\"overall_score\": 91, \"engagement_score\": 77, \"audience_score\": 86, \"brand_fit_score\": 98, \"summary\": \"Emerging budget travel creator showing growing momentum with the 18-24 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Cross-platform presence adds extra reach potential beyond the primary channel\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Sponsored content performance reaches 69% of organic posts, indicating strong brand trust\"]}"
+  },
+  {
+    "input": "Twitter, Notes: travel and lifestyle, 30-50 age audience",
+    "output": "{\"overall_score\": 60, \"engagement_score\": 71, \"audience_score\": 72, \"brand_fit_score\": 69, \"summary\": \"Emerging travel and lifestyle creator showing growing momentum with the 30-50 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Follower-to-following ratio indicates an organically built, credible audience base\", \"Average engagement of 5.3% over the last 30 days, in line with category average\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Peak engagement windows align with midweek afternoons, useful for scheduling campaign posts\"]}"
+  },
+  {
+    "input": "TikTok, Notes: education and study tips, 18-25 age audience",
+    "output": "{\"overall_score\": 83, \"engagement_score\": 91, \"audience_score\": 86, \"brand_fit_score\": 76, \"summary\": \"Established education and study tips voice with a loyal 18-25 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Audience growth rate over the past quarter suggests strong momentum\", \"Audience demographics strongly match the 18-25 target range with high retention\", \"Average engagement of 5.7% over the last 30 days, slightly above category average\", \"Comment sentiment analysis shows a positive response to product-related posts\"]}"
+  },
+  {
+    "input": "YouTube, Notes: luxury lifestyle, 13-17 age audience",
+    "output": "{\"overall_score\": 56, \"engagement_score\": 51, \"audience_score\": 54, \"brand_fit_score\": 47, \"summary\": \"A high-energy luxury lifestyle creator with solid engagement rates among 13-17 audiences. Good potential for niche brand partnerships in this category.\", \"insights\": [\"Peak engagement windows align with midweek afternoons, useful for scheduling campaign posts\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Sponsored content performance reaches 65% of organic posts, indicating strong brand trust\", \"Follower-to-following ratio indicates an organically built, credible audience base\"]}"
+  },
+  {
+    "input": "Instagram, Notes: interior design, 25-35 age audience",
+    "output": "{\"overall_score\": 65, \"engagement_score\": 51, \"audience_score\": 58, \"brand_fit_score\": 63, \"summary\": \"Highly credible interior design creator with notable audience trust, ideal for brand partnerships seeking authentic product endorsements to 25-35 viewers.\", \"insights\": [\"Average engagement of 9.3% over the last 30 days, slightly above category average\", \"Peak engagement windows align with midweek afternoons, useful for scheduling campaign posts\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Content format favors short-form video, which supports detailed product storytelling\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: luxury lifestyle, 13-17 age audience",
+    "output": "{\"overall_score\": 86, \"engagement_score\": 75, \"audience_score\": 77, \"brand_fit_score\": 85, \"summary\": \"This influencer shows strong alignment with luxury lifestyle brands targeting 13-17 audiences. Their content consistently resonates with an engaged demographic that values authenticity over trends.\", \"insights\": [\"Historical brand collaborations in this niche have shown consistent completion rates\", \"Comment sentiment analysis shows a positive response to product-related posts\", \"Audience demographics strongly match the 13-17 target range with high retention\", \"Audience growth rate over the past quarter suggests strong momentum\"]}"
+  },
+  {
+    "input": "Pinterest, Notes: pet content, 20-30 age audience",
+    "output": "{\"overall_score\": 62, \"engagement_score\": 56, \"audience_score\": 64, \"brand_fit_score\": 65, \"summary\": \"Niche pet specialist whose 20-30 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Sponsored content performance reaches 60% of organic posts, indicating solid brand trust\", \"Audience growth rate over the past quarter suggests accelerating momentum\", \"Average engagement of 8.7% over the last 30 days, in line with category average\", \"Comment sentiment analysis shows a largely positive response to product-related posts\"]}"
+  },
+  {
+    "input": "YouTube, Notes: travel and lifestyle, 20-40 age audience",
+    "output": "{\"overall_score\": 83, \"engagement_score\": 82, \"audience_score\": 81, \"brand_fit_score\": 78, \"summary\": \"Reliable travel and lifestyle content creator with steady engagement, well-suited for brands targeting 20-40 audiences interested in this category.\", \"insights\": [\"Content consistency suggests a reliable posting schedule beneficial for campaign planning\", \"Content format favors live sessions, which supports detailed product storytelling\", \"Average engagement of 6.2% over the last 30 days, below category average\", \"Peak engagement windows align with weekend afternoons, useful for scheduling campaign posts\"]}"
+  },
+  {
+    "input": "Instagram, Notes: plant and gardening, 30-45 age audience",
+    "output": "{\"overall_score\": 88, \"engagement_score\": 86, \"audience_score\": 95, \"brand_fit_score\": 97, \"summary\": \"Niche plant and gardening specialist whose 30-45 audience shows above-average purchase intent, a strong fit for targeted product placements.\", \"insights\": [\"Geographic distribution of followers may require region-specific campaign messaging\", \"Content format favors live sessions, which supports detailed product storytelling\", \"Follower-to-following ratio indicates an organically built, credible audience base\", \"Sponsored content performance reaches 85% of organic posts, indicating growing brand trust\"]}"
+  },
+  {
+    "input": "LinkedIn, Notes: education and study tips, 25-35 age audience",
+    "output": "{\"overall_score\": 62, \"engagement_score\": 71, \"audience_score\": 66, \"brand_fit_score\": 55, \"summary\": \"Well-rounded education and study tips content creator with appeal across the 25-35 range, suitable for diverse brand categories related to this niche.\", \"insights\": [\"Historical brand collaborations in this niche have shown consistent completion rates\", \"Sponsored content performance reaches 63% of organic posts, indicating strong brand trust\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Comment sentiment analysis shows an enthusiastic response to product-related posts\"]}"
+  },
+  {
+    "input": "Instagram, Notes: photography, 30-50 age audience",
+    "output": "{\"overall_score\": 75, \"engagement_score\": 83, \"audience_score\": 67, \"brand_fit_score\": 65, \"summary\": \"Established photography voice with a loyal 30-50 following, presenting dependable ROI potential for aligned brand campaigns.\", \"insights\": [\"Peak engagement windows align with weekday evenings, useful for scheduling campaign posts\", \"Sponsored content performance reaches 75% of organic posts, indicating growing brand trust\", \"Historical brand collaborations in this niche have shown consistent completion rates\", \"Audience demographics strongly match the 30-50 target range with high retention\"]}"
+  },
+  {
+    "input": "YouTube, Notes: makeup tutorials, 18-25 age audience",
+    "output": "{\"overall_score\": 61, \"engagement_score\": 64, \"audience_score\": 54, \"brand_fit_score\": 58, \"summary\": \"Emerging makeup tutorials creator showing growing momentum with the 18-25 demographic, worth monitoring for early-stage brand partnerships.\", \"insights\": [\"Peak engagement windows align with weekday evenings, useful for scheduling campaign posts\", \"Sponsored content performance reaches 79% of organic posts, indicating solid brand trust\", \"Geographic distribution of followers may require region-specific campaign messaging\", \"Follower-to-following ratio indicates an organically built, credible audience base\"]}"
+  }
+]
