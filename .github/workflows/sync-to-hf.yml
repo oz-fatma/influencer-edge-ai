@@ -19,4 +19,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.TOKENFORDATABASE }}
         run: |
-          hf upload fatmaoz/influencer-edge-dataset ./influencer_training_data.json --token $HF_TOKEN
+          hf upload fatmaoz/influencer-edge-dataset ./influencer_training_data.json --repo-type dataset --token $HF_TOKEN
