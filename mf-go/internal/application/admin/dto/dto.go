@@ -11,7 +11,7 @@ const (
 	DefaultSystemPrompt = "You are an expert influencer marketing analyst. ONLY return valid JSON. No markdown, no explanation, no code fences."
 	DefaultTemperature  = 0.1
 	DefaultMaxTokens    = 100
-	DefaultModel        = "gemma-influencer-ft"
+	DefaultModel        = "tgi"
 )
 
 var allowedAdminModels = map[string]struct{}{

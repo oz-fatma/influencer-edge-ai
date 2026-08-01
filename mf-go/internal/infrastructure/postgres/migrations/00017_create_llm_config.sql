@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS llm_config (
     system_prompt TEXT NOT NULL,
     temperature   DOUBLE PRECISION NOT NULL DEFAULT 0.1,
     max_tokens    INTEGER NOT NULL DEFAULT 100,
-    model         VARCHAR(128) NOT NULL DEFAULT 'gemma-influencer-ft',
+    model         VARCHAR(128) NOT NULL DEFAULT 'tgi',
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_by    UUID REFERENCES users(id) ON DELETE SET NULL
 );
@@ -15,7 +15,7 @@ VALUES (
     'You are an expert influencer marketing analyst. ONLY return valid JSON. No markdown, no explanation, no code fences.',
     0.1,
     100,
-    'gemma-influencer-ft'
+    'tgi'
 )
 ON CONFLICT (id) DO NOTHING;
 
