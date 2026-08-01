@@ -62,8 +62,37 @@ function matchAnalysis(
   score: InfluencerScore,
   analyses: InfluencerAnalysis[],
 ): InfluencerAnalysis | undefined {
+  const history = getAnalysisHistory(score, analyses);
+  return history[0];
+}
+
+function getAnalysisHistory(
+  score: InfluencerScore,
+  analyses: InfluencerAnalysis[],
+): InfluencerAnalysis[] {
   const name = score.influencer_name.toLowerCase();
-  return analyses.find((a) => a.influencer_name.toLowerCase() === name);
+  return analyses
+    .filter((a) => a.influencer_name.toLowerCase() === name)
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+}
+
+function truncateSummary(text: string, maxLen = 100): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxLen) return trimmed;
+  return `${trimmed.slice(0, maxLen)}...`;
+}
+
+function formatAnalysisDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
 }
 
 function parseStoredInsights(insights: string): string[] {
@@ -127,6 +156,7 @@ export default function MatchingPage() {
   const [modelProgressText, setModelProgressText] = useState("");
   const [userQuestion, setUserQuestion] = useState("");
   const [askedQuestion, setAskedQuestion] = useState<string | null>(null);
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -185,6 +215,11 @@ export default function MatchingPage() {
     () => (selected ? matchAnalysis(selected, analyses) : undefined),
     [selected, analyses],
   );
+
+  const pastAnalysisHistory = useMemo(() => {
+    if (!selected) return [];
+    return getAnalysisHistory(selected, analyses).slice(1);
+  }, [selected, analyses]);
 
   async function persistAnalysis(
     result: InfluencerAnalysisResult,
@@ -378,6 +413,7 @@ export default function MatchingPage() {
     setSelectedInfluencerId(null);
     setAskedQuestion(null);
     setUserQuestion("");
+    setExpandedHistoryId(null);
   }
 
   const displayScores = liveResult
@@ -604,6 +640,75 @@ export default function MatchingPage() {
                           </li>
                         ))}
                       </ul>
+                    </div>
+                  )}
+
+                  {pastAnalysisHistory.length > 0 && (
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
+                      <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
+                        Analysis History
+                      </h3>
+                      <p className="mb-4 text-xs text-[var(--muted)]">
+                        {pastAnalysisHistory.length} earlier{" "}
+                        {pastAnalysisHistory.length === 1 ? "analysis" : "analyses"}
+                      </p>
+                      <div className="space-y-2">
+                        {pastAnalysisHistory.map((entry) => {
+                          const expanded = expandedHistoryId === entry.id;
+                          const insights = parseStoredInsights(entry.insights);
+                          return (
+                            <div
+                              key={entry.id}
+                              className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)]"
+                            >
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedHistoryId((prev) =>
+                                    prev === entry.id ? null : entry.id,
+                                  )
+                                }
+                                className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface)]"
+                              >
+                                <span
+                                  className={`mt-0.5 shrink-0 text-xs text-[var(--muted)] transition-transform ${
+                                    expanded ? "rotate-90" : ""
+                                  }`}
+                                  aria-hidden
+                                >
+                                  ▶
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-medium text-[var(--muted)]">
+                                    {formatAnalysisDate(entry.created_at)}
+                                    <span className="ml-2 capitalize text-[var(--foreground)]/70">
+                                      · {entry.analysis_type.replace(/-/g, " ")}
+                                    </span>
+                                  </p>
+                                  <p className="mt-1 text-sm text-[var(--foreground)]/90">
+                                    {truncateSummary(entry.summary)}
+                                  </p>
+                                </div>
+                              </button>
+                              {expanded && (
+                                <div className="border-t border-[var(--border)] px-4 py-4">
+                                  <p className="text-sm leading-relaxed">{entry.summary}</p>
+                                  {insights.length > 0 && (
+                                    <ul className="mt-4 space-y-2">
+                                      {insights.map((insight, i) => (
+                                        <li key={i} className="flex gap-2 text-sm">
+                                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+                                          {insight}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </>
