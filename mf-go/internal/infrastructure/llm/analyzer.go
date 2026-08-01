@@ -21,7 +21,7 @@ const (
 	endpointTypeChat        = "chat"
 	endpointTypeHFInference = "hf-inference"
 	hfModelTurnPrefix       = "<start_of_turn>model\n"
-	hfInferenceMaxNewTokens = 200
+	hfInferenceMaxNewTokens = 280
 )
 
 const defaultSystemPrompt = "You are an expert influencer marketing analyst. ONLY return valid JSON. No markdown, no explanation, no code fences."
