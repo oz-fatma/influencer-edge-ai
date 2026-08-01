@@ -11,9 +11,11 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/redis/go-redis/v9"
 
 	// Infrastructure
+	infrapostgres "github.com/masterfabric-go/masterfabric/internal/infrastructure/postgres"
 	infraAuth "github.com/masterfabric-go/masterfabric/internal/infrastructure/auth"
 	apimgmtHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/apimanagement"
 	auditHandler "github.com/masterfabric-go/masterfabric/internal/infrastructure/http/handler/audit"
@@ -108,6 +110,15 @@ func run() error {
 			"database", cfg.Database.DBName,
 			"schema", cfg.Database.Schema,
 		)
+
+		sqlDB := stdlib.OpenDB(*db.Config().ConnConfig)
+		defer sqlDB.Close()
+		if err := infrapostgres.RunMigrations(sqlDB, cfg.Database.Schema); err != nil {
+			log.Error("database migrations failed", "error", err)
+			return fmt.Errorf("database migrations failed: %w", err)
+		}
+		log.Info("database migrations up to date")
+
 		if cfg.Database.Schema != "" {
 			var searchPath string
 			if err := db.QueryRow(ctx, "SHOW search_path").Scan(&searchPath); err == nil {

@@ -5,15 +5,15 @@
 # Features:
 #   - Starts Docker services (Postgres, Redis, Kafka, Kafka UI)
 #   - Waits for services to become healthy
-#   - Runs database migrations (Up only)
+#   - Runs database migrations automatically when the server starts
 #   - Ensures Kafka topics exist
 #   - Starts the Go server with hot-reload (air)
 #
 # Usage:
-#   ./dev.sh          — Full startup (infra + migrations + hot-reload)
+#   ./dev.sh          — Full startup (infra + hot-reload; migrations on server start)
 #   ./dev.sh server   — Hot-reload server only (skip infra)
 #   ./dev.sh infra    — Start infra only (no server)
-#   ./dev.sh migrate  — Run migrations only
+#   ./dev.sh migrate  — Deprecated (migrations run on server startup)
 #   ./dev.sh down     — Stop all Docker services
 #   ./dev.sh logs     — Tail Docker service logs
 #   ./dev.sh clean    — Stop infra, remove volumes, clean build artifacts
@@ -199,7 +199,6 @@ start_server() {
 cmd_full() {
     ensure_dirs
     start_infra
-    run_migrations
     start_server
 }
 
@@ -211,13 +210,13 @@ cmd_server() {
 cmd_infra() {
     ensure_dirs
     start_infra
-    run_migrations
     echo ""
-    log_ok "Infrastructure is ready. Run ${BOLD}./dev.sh server${NC} to start the app."
+    log_ok "Infrastructure is ready. Run ${BOLD}./dev.sh server${NC} to start the app (migrations run on server startup)."
 }
 
 cmd_migrate() {
-    run_migrations
+    log_warn "Migrations now run automatically when the server starts."
+    log_info "Start the server with ${BOLD}./dev.sh server${NC} (or ${BOLD}./dev.sh${NC}) after infra is up."
 }
 
 cmd_down() {
@@ -242,10 +241,10 @@ cmd_help() {
     echo "Usage: ./dev.sh [command]"
     echo ""
     echo "Commands:"
-    echo -e "  ${GREEN}(default)${NC}   Full startup: infra + migrations + hot-reload server"
+    echo -e "  ${GREEN}(default)${NC}   Full startup: infra + hot-reload server (migrations on server start)"
     echo -e "  ${GREEN}server${NC}      Start hot-reload server only (infra must be running)"
     echo -e "  ${GREEN}infra${NC}       Start infrastructure only (Postgres, Redis, Kafka)"
-    echo -e "  ${GREEN}migrate${NC}     Run database migrations"
+    echo -e "  ${GREEN}migrate${NC}     Deprecated — migrations run automatically on server startup"
     echo -e "  ${GREEN}down${NC}        Stop all Docker services"
     echo -e "  ${GREEN}logs${NC}        Tail Docker service logs"
     echo -e "  ${GREEN}clean${NC}       Stop infra, remove volumes, clean build artifacts"
