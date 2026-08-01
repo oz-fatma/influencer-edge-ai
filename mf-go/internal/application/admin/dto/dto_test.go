@@ -45,7 +45,7 @@ func TestValidateUpdateLLMConfig(t *testing.T) {
 
 func TestAllowedModels(t *testing.T) {
 	models := dto.AllowedModels()
-	if len(models) != 2 {
+	if len(models) != 3 {
 		t.Fatalf("models len = %d", len(models))
 	}
 }

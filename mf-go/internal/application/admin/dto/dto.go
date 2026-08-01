@@ -17,6 +17,7 @@ const (
 var allowedAdminModels = map[string]struct{}{
 	"gemma-influencer-ft": {},
 	"gemma2:2b":           {},
+	"tgi":                 {},
 }
 
 type LLMConfigResponse struct {
@@ -72,11 +73,11 @@ func ValidateUpdateLLMConfig(req UpdateLLMConfigRequest) error {
 		return domainErr.New(domainErr.ErrValidation, "max_tokens must be between 1 and 2000", nil)
 	}
 	if _, ok := allowedAdminModels[req.Model]; !ok {
-		return domainErr.New(domainErr.ErrValidation, "model must be gemma-influencer-ft or gemma2:2b", nil)
+		return domainErr.New(domainErr.ErrValidation, "model must be gemma-influencer-ft, gemma2:2b, or tgi", nil)
 	}
 	return nil
 }
 
 func AllowedModels() []string {
-	return []string{"gemma-influencer-ft", "gemma2:2b"}
+	return []string{"gemma-influencer-ft", "gemma2:2b", "tgi"}
 }
