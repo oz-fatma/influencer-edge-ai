@@ -131,6 +131,16 @@ func (w *recordingLLMWriter) Insert(_ context.Context, modelName string, promptL
 	return nil
 }
 
+func TestBuildHFInferenceInputs_productionFormat(t *testing.T) {
+	systemPrompt := defaultSystemPrompt
+	userPrompt := buildPrompt("Luna Skincare", "instagram", "Influencer profile: Niche: Beauty and skincare, Demographics: 25-34, Followers: 100K-500K\n\nQuestion: Is this a good fit for a young tech brand?")
+	got := buildHFInferenceInputs(systemPrompt, userPrompt)
+	wantPrefix := "<start_of_turn>user\n" + systemPrompt + "\n\n" + userPrompt + "<end_of_turn>\n<start_of_turn>model\n"
+	if got != wantPrefix {
+		t.Fatalf("buildHFInferenceInputs() mismatch\n\ngot:\n%s\n\nwant:\n%s", got, wantPrefix)
+	}
+}
+
 func TestAnalyze_recordsSuccessfulLLMRequest(t *testing.T) {
 	validJSON := `{"overall_score":80,"engagement_score":80,"audience_score":80,"brand_fit_score":80,"summary":"Good fit","insights":["Strong niche alignment"]}`
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

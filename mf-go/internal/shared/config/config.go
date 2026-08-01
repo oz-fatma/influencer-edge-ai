@@ -30,9 +30,11 @@ type MCPConfig struct {
 
 // LLMConfig holds OpenAI-compatible Ollama proxy settings (LLM_BASE_URL → tunnel/Caddy).
 type LLMConfig struct {
-	BaseURL string
-	Model   string
-	Timeout time.Duration
+	BaseURL      string
+	Model        string
+	APIKey       string
+	EndpointType string // "chat" (default) or "hf-inference"
+	Timeout      time.Duration
 }
 
 // WebSocketConfig holds real-time WebSocket settings.
@@ -177,9 +179,11 @@ func loadMCPConfig() MCPConfig {
 
 func loadLLMConfig() LLMConfig {
 	return LLMConfig{
-		BaseURL: strings.TrimRight(envOrDefault("LLM_BASE_URL", ""), "/"),
-		Model:   envOrDefault("LLM_MODEL", "gemma2:2b"),
-		Timeout: time.Duration(envOrDefaultInt("LLM_TIMEOUT_SECONDS", 300)) * time.Second,
+		BaseURL:      strings.TrimRight(envOrDefault("LLM_BASE_URL", ""), "/"),
+		Model:        envOrDefault("LLM_MODEL", "gemma2:2b"),
+		APIKey:       envOrDefault("LLM_API_KEY", ""),
+		EndpointType: envOrDefault("LLM_ENDPOINT_TYPE", "chat"),
+		Timeout:      time.Duration(envOrDefaultInt("LLM_TIMEOUT_SECONDS", 300)) * time.Second,
 	}
 }
 
