@@ -608,7 +608,7 @@ export default function MatchingPage() {
                   {askedQuestion && (
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-4">
                       <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-                        Soru
+                        Question
                       </p>
                       <p className="mt-1 text-sm leading-relaxed">{askedQuestion}</p>
                     </div>
