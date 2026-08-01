@@ -1,17 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
+  authApi,
   handleUnauthorizedRedirect,
   isUnauthorized,
   monitoringApi,
   type MonitoringStats,
 } from "@/lib/api";
+import { setIsAdmin } from "@/lib/auth";
 import { formatLatency, formatTimestamp } from "@/lib/format";
 
 const POLL_INTERVAL_MS = 10_000;
 
 export default function MonitoringPage() {
+  const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
+
   const [stats, setStats] = useState<MonitoringStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +29,17 @@ export default function MonitoringPage() {
 
     async function loadStats(isInitial = false) {
       try {
+        if (isInitial) {
+          const me = await authApi.me();
+          if (cancelled) return;
+
+          setIsAdmin(me.is_admin);
+          if (!me.is_admin) {
+            routerRef.current.replace("/dashboard");
+            return;
+          }
+        }
+
         const data = await monitoringApi.getStats();
         if (cancelled) return;
         setStats(data);

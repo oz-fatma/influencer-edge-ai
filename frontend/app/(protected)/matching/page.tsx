@@ -487,7 +487,7 @@ export default function MatchingPage() {
                     onChange={(e) => setUserQuestion(e.target.value)}
                     maxLength={MAX_ANALYZE_QUERY_LEN}
                     disabled={analyzing || engineBusy}
-                    placeholder="Örn: Bu influencer genç bir teknoloji markası için uygun mu?"
+                    placeholder="e.g. Is this influencer a good fit for a young tech brand?"
                     className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 disabled:opacity-50"
                   />
                   <p className="mt-1 text-xs text-[var(--muted)]">
@@ -514,12 +514,25 @@ export default function MatchingPage() {
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <ScorePill
                     label={liveResult ? "Overall (AI)" : "Overall"}
+                    description="Overall fit score"
                     value={displayScores.overall}
                     highlight
                   />
-                  <ScorePill label="Engagement" value={displayScores.engagement} />
-                  <ScorePill label="Audience" value={displayScores.audience} />
-                  <ScorePill label="Brand Fit" value={displayScores.brandFit} />
+                  <ScorePill
+                    label="Engagement"
+                    description="Follower engagement rate"
+                    value={displayScores.engagement}
+                  />
+                  <ScorePill
+                    label="Audience"
+                    description="Audience-brand alignment"
+                    value={displayScores.audience}
+                  />
+                  <ScorePill
+                    label="Brand Fit"
+                    description="Brand values match"
+                    value={displayScores.brandFit}
+                  />
                 </div>
               </div>
 
@@ -598,10 +611,12 @@ export default function MatchingPage() {
 
 function ScorePill({
   label,
+  description,
   value,
   highlight,
 }: {
   label: string;
+  description?: string;
   value: number;
   highlight?: boolean;
 }) {
@@ -612,8 +627,11 @@ function ScorePill({
       }`}
     >
       <p className="text-[10px] uppercase tracking-wider text-[var(--muted)]">{label}</p>
+      {description && (
+        <p className="mt-0.5 text-xs text-[var(--muted)] opacity-80">{description}</p>
+      )}
       <p
-        className={`text-lg font-bold ${highlight ? "text-[var(--accent)]" : scoreColor(value)}`}
+        className={`mt-1 text-lg font-bold ${highlight ? "text-[var(--accent)]" : scoreColor(value)}`}
       >
         {value}
       </p>

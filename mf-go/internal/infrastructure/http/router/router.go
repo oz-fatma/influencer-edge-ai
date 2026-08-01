@@ -200,7 +200,7 @@ func New(deps Dependencies) *chi.Mux {
 
 			// InfluencerEdge domain (scores, analyses, LLM monitoring)
 			if deps.InfluencerHandler != nil {
-				registerInfluencerRoutes(r, deps.InfluencerHandler)
+				registerInfluencerRoutes(r, deps.InfluencerHandler, deps.AdminRepo)
 			}
 
 			if deps.MCPHandler != nil {
@@ -253,7 +253,7 @@ func New(deps Dependencies) *chi.Mux {
 	return r
 }
 
-func registerInfluencerRoutes(r chi.Router, h *influencerHandler.Handler) {
+func registerInfluencerRoutes(r chi.Router, h *influencerHandler.Handler, adminRepo adminRepo.AdminRepository) {
 	r.Route("/scores", func(r chi.Router) {
 		r.Post("/", h.CreateScore)
 		r.Get("/", h.ListScores)
@@ -270,5 +270,10 @@ func registerInfluencerRoutes(r chi.Router, h *influencerHandler.Handler) {
 	r.Get("/influencer-analysis/{id}", h.GetAnalysis)
 	r.Post("/llm/analyze", h.AnalyzeInfluencerLLM)
 	r.Post("/llm-metrics", h.RecordLLMMetric)
-	r.Get("/monitoring/stats", h.GetMonitoringStats)
+	if adminRepo != nil {
+		r.Route("/monitoring", func(r chi.Router) {
+			r.Use(middleware.RequireAdmin(adminRepo))
+			r.Get("/stats", h.GetMonitoringStats)
+		})
+	}
 }

@@ -6,11 +6,15 @@ import { useEffect, useState } from "react";
 import { authApi, isUnauthorized } from "@/lib/api";
 import { clearAuth, getIsAdmin, setIsAdmin } from "@/lib/auth";
 
-const navItems = [
+const baseNavItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/influencers", label: "Influencer Pool" },
   { href: "/matching", label: "Matching Panel" },
+];
+
+const adminNavItems = [
   { href: "/monitoring", label: "Monitoring" },
+  { href: "/admin", label: "Admin" },
 ];
 
 export default function Navbar() {
@@ -50,8 +54,8 @@ export default function Navbar() {
   }
 
   const items = isAdmin
-    ? [...navItems, { href: "/admin", label: "Admin" }]
-    : navItems;
+    ? [...baseNavItems, ...adminNavItems]
+    : baseNavItems;
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--surface)]/80 backdrop-blur-xl">
