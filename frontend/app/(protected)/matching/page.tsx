@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useAnalysisContext } from "@/context/AnalysisContext";
 import {
   analysesApi,
   ApiError,
@@ -26,8 +27,6 @@ import {
   normalizeInsights,
   WEBLLM_MODEL_ID,
 } from "@/lib/webllm";
-
-type AnalysisPhase = "idle" | "server" | "browser";
 
 const MCP_ANALYZE_QUERY = DEFAULT_ANALYZE_QUERY;
 
@@ -100,20 +99,28 @@ function shouldFallbackToWebLLM(error: unknown): boolean {
 
 export default function MatchingPage() {
   const pathname = usePathname();
+  const {
+    analyzing,
+    setAnalyzing,
+    analysisPhase,
+    setAnalysisPhase,
+    selectedInfluencerId,
+    setSelectedInfluencerId,
+    liveResult,
+    setLiveResult,
+    analysisSource,
+    setAnalysisSource,
+    analysisError,
+    setAnalysisError,
+    analysisNotice,
+    setAnalysisNotice,
+  } = useAnalysisContext();
+
   const [scores, setScores] = useState<InfluencerScore[]>([]);
   const [analyses, setAnalyses] = useState<InfluencerAnalysis[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analysisPhase, setAnalysisPhase] = useState<AnalysisPhase>("idle");
-  const [analysisNotice, setAnalysisNotice] = useState<string | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [liveResult, setLiveResult] = useState<InfluencerAnalysisResult | null>(null);
-  const [analysisSource, setAnalysisSource] = useState<"ollama" | "web-llm" | null>(
-    null,
-  );
 
   const [engineBusy, setEngineBusy] = useState(false);
   const [modelProgress, setModelProgress] = useState<number | null>(null);
@@ -138,6 +145,13 @@ export default function MatchingPage() {
         setScores(list);
         setAnalyses(analysesData.analyses ?? []);
         setSelectedId((prev) => {
+          const contextId =
+            (analyzing || liveResult) && selectedInfluencerId
+              ? selectedInfluencerId
+              : null;
+          if (contextId && list.some((s) => s.id === contextId)) {
+            return contextId;
+          }
           if (prev !== null && list.some((s) => s.id === prev)) return prev;
           return list.length > 0 ? list[0].id : null;
         });
@@ -160,7 +174,7 @@ export default function MatchingPage() {
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, [pathname, analyzing, selectedInfluencerId, liveResult]);
 
   const selected = useMemo(
     () => scores.find((s) => s.id === selectedId) ?? null,
@@ -267,6 +281,7 @@ export default function MatchingPage() {
 
     setAnalyzing(true);
     setAnalysisPhase("server");
+    setSelectedInfluencerId(selected.id);
     setAnalysisError(null);
     setAnalysisNotice(null);
     setLiveResult(null);
@@ -353,11 +368,14 @@ export default function MatchingPage() {
   }
 
   function handleSelect(id: string) {
+    if (analyzing) return;
+
     setSelectedId(id);
     setLiveResult(null);
     setAnalysisError(null);
     setAnalysisNotice(null);
     setAnalysisSource(null);
+    setSelectedInfluencerId(null);
     setAskedQuestion(null);
     setUserQuestion("");
   }
@@ -432,7 +450,8 @@ export default function MatchingPage() {
               <button
                 key={s.id}
                 onClick={() => handleSelect(s.id)}
-                className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${
+                disabled={analyzing}
+                className={`w-full rounded-xl border px-4 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
                   selectedId === s.id
                     ? "border-[var(--accent)]/50 bg-[var(--accent-muted)]"
                     : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/20"
