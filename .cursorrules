@@ -1,0 +1,62 @@
+# InfluencerEdge AI — Cursor Rules
+
+Bu proje için Cursor'un her zaman uyması gereken kurallar. Kod yazarken, düzenlerken veya öneri sunarken bu kuralları dikkate al.
+
+---
+
+## 1. Genel Çalışma Tarzı
+
+- Büyük bir değişiklik yapmadan önce (birden fazla dosya/katman etkileniyorsa) önce bir plan/dosya listesi sun, onay bekle.
+- Değişiklik sonrası hangi dosyaları oluşturduğunu/değiştirdiğini kısa bir özetle bildir.
+- Testleri çalıştır ve sonucu raporla (`go test ./...`, varsa `npm test`).
+- Adım adım ilerle; büyük bir işi tek seferde bitirmeye çalışma, her adımdan sonra test edilebilir/çalışır bir durum bırak.
+- Açıklamaları Türkçe yap, ama kod ve commit mesajları İngilizce kalsın.
+
+## 2. Geriye Dönük Uyumluluk
+
+- Yeni bir özellik eklerken mevcut çalışan akışları (örn. Ollama/chat path, WebLLM fallback) bozma.
+- Yeni davranışı mümkünse ayrı bir kod yolu olarak ekle, mevcut olanı koru (örnek: `analyzeViaChat` vs `analyzeViaHFInference` ayrımı).
+- Bir fonksiyonu/endpoint'i değiştirmeden önce, onu kimin/nerenin çağırdığını kontrol et.
+
+## 3. Veritabanı ve Migration Kuralları
+
+- Migration'ları asla elle çalıştırma önerme; backend zaten startup'ta otomatik migration çalıştırıyor (`internal/infrastructure/postgres/migrate.go`, `schema_migrations` tablosu ile takip ediliyor).
+- Yeni migration dosyası eklerken bir önceki en yüksek numaradan devam et (örn. son dosya 00022 ise yeni dosya 00023 olsun).
+- Var olan bir migration dosyasını asla değiştirme — geriye dönük uyumluluğu bozar. Değişiklik gerekiyorsa yeni bir migration dosyası ekle.
+- Migration dosyaları `-- +goose Up` / `-- +goose Down` formatında olsun, mevcut dosyalardaki stille birebir tutarlı olsun.
+- Yeni tablo/sütun eklerken mevcut desenle tutarlı kal: `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`, `user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE`, `created_at`/`updated_at TIMESTAMPTZ`.
+- Kullanıcıya ait tüm sorgularda `user_id` ile scope et; cross-user erişimi repository seviyesinde engelle.
+
+## 4. Backend (mf-go) Mimarisi
+
+- Mevcut Clean/Hexagonal Architecture katmanlarını takip et: `domain` → `application` (dto, usecase) → `infrastructure` (http/handler, postgres).
+- Yeni bir kaynak (resource) eklerken mevcut `influencer_scores` / `influencer_analyses` / `brand_profiles` CRUD desenini örnek al (aynı klasör yapısı, aynı isimlendirme).
+- Route'ları `router.go` içinde mevcut gruplandırmaya (JWT korumalı `/api/v1`, admin-only `/admin` alt grubu gibi) uygun şekilde ekle.
+
+## 5. Frontend Kuralları
+
+- Mevcut koyu tema ve kart stiliyle tutarlı kal (`bg-[var(--surface-elevated)]`, `border-[var(--border)]` gibi CSS değişkenleri).
+- Tüm kullanıcıya görünen metinler İngilizce olsun (uygulama dili İngilizce) — Türkçe metin sızıntısı olmasın.
+- Yeni bir sayfa eklerken mevcut `(protected)` layout yapısını ve Navbar entegrasyonunu takip et.
+
+## 6. Hata Yönetimi ve Loglama
+
+- Hataları asla sessizce yutma; en azından log'la.
+- Debug amaçlı eklenen geçici log satırlarını (örn. "Chat request user prompt" gibi tam prompt loglayanlar), sorun çözüldükten sonra kaldırmayı hatırlat/öner.
+- Kullanıcıya dönen hata mesajları ile loglanan teknik detayları birbirinden ayır (kullanıcıya genel mesaj, log'a detay).
+
+## 7. Güvenlik
+
+- API key, token, şifre gibi hassas değerleri kod içine hardcode etme, her zaman environment variable kullan.
+- `.env` dosyalarını veya herhangi bir gerçek token/API key'i asla commit etme, konuşmada paylaşma.
+- Yeni bir endpoint eklerken, admin-only olması gerekip gerekmediğini değerlendir (Monitoring, Admin Panel gibi hassas veriler admin'e kısıtlanmalı).
+
+## 8. LLM / Prompt Tutarlılığı
+
+- Prompt formatını (system prompt, few-shot, input yapısı) değiştirirken, bunun eğitim verisiyle (`influencer_training_data*.json`) uyumlu kalıp kalmadığını kontrol et — uyumsuzluk modelin tutarsız/bozuk çıktı üretmesine yol açar.
+- `LLM_ENDPOINT_TYPE=chat` (Ollama) ve `LLM_ENDPOINT_TYPE=hf-inference` (HF Endpoint) yollarını ayrı tut; birini değiştirirken diğerinin bozulmadığından emin ol.
+
+## 9. Dokümantasyon
+
+- Yeni bir büyük özellik (yeni tablo, yeni sayfa, yeni mimari bileşen) eklendiğinde `README.md`'yi güncellemeyi öner.
+- Önemli bir mimari karar alındığında (örn. yeni bir servise geçiş) bunun nedenini kısaca not düş.
