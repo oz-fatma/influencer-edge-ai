@@ -267,6 +267,15 @@ func registerInfluencerRoutes(r chi.Router, h *influencerHandler.Handler, adminR
 		r.Post("/", h.CreateAnalysis)
 		r.Get("/", h.ListAnalyses)
 	})
+	r.Route("/brand-profiles", func(r chi.Router) {
+		r.Post("/", h.CreateBrandProfile)
+		r.Get("/", h.ListBrandProfiles)
+		r.Route("/{id}", func(r chi.Router) {
+			r.Get("/", h.GetBrandProfile)
+			r.Put("/", h.UpdateBrandProfile)
+			r.Delete("/", h.DeleteBrandProfile)
+		})
+	})
 	r.Get("/influencer-analysis/{id}", h.GetAnalysis)
 	r.Post("/llm/analyze", h.AnalyzeInfluencerLLM)
 	r.Post("/llm-metrics", h.RecordLLMMetric)

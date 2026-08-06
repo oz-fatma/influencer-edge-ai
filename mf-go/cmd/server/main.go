@@ -329,6 +329,7 @@ func buildDependencies(
 
 	scoreRepo := pgInfluencer.NewScoreRepo(db)
 	analysisRepo := pgInfluencer.NewAnalysisRepo(db)
+	brandProfileRepo := pgInfluencer.NewBrandProfileRepo(db)
 	llmMetricsStore := infraRedis.NewLLMMetricsStore(redisClient)
 	llmConfigAdapter := infraLLM.NewConfigAdapter(llmConfigRepo)
 	llmAnalyzer := infraLLM.NewAnalyzer(cfg.LLM, llmRequestRepo, llmConfigAdapter)
@@ -337,7 +338,7 @@ func buildDependencies(
 	} else {
 		log.Info("LLM proxy disabled", "hint", "set LLM_BASE_URL to enable /api/v1/llm/analyze")
 	}
-	mcpService := infraMCP.NewService(llmAnalyzer, cfg.MCP.Model)
+	mcpService := infraMCP.NewService(llmAnalyzer, cfg.MCP.Model, brandProfileRepo)
 	if llmAnalyzer != nil {
 		log.Info("MCP adapter enabled", "model", cfg.MCP.Model, "endpoint", "/api/v1/mcp/request")
 	}
@@ -347,7 +348,8 @@ func buildDependencies(
 	deps.AdminHandler = adminHandler.NewHandler(adminConfigService, adminLogsService)
 	deps.InfluencerHandler = influencerHandler.NewHandler(
 		influencerUC.NewScoreService(scoreRepo),
-		influencerUC.NewAnalysisService(analysisRepo, scoreRepo),
+		influencerUC.NewAnalysisService(analysisRepo, scoreRepo, brandProfileRepo),
+		influencerUC.NewBrandProfileService(brandProfileRepo),
 		influencerUC.NewMonitoringService(llmMetricsStore),
 		llmAnalyzer,
 	)

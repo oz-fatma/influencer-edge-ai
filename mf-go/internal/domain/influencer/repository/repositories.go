@@ -20,3 +20,11 @@ type AnalysisRepository interface {
 	GetByID(ctx context.Context, userID, id uuid.UUID) (*model.InfluencerAnalysis, error)
 	ListByUser(ctx context.Context, userID uuid.UUID, platform string, limit, offset int) ([]model.InfluencerAnalysis, error)
 }
+
+type BrandProfileRepository interface {
+	Create(ctx context.Context, profile *model.BrandProfile) error
+	GetByID(ctx context.Context, userID, id uuid.UUID) (*model.BrandProfile, error)
+	ListByUser(ctx context.Context, userID uuid.UUID, limit, offset int) ([]model.BrandProfile, error)
+	Update(ctx context.Context, profile *model.BrandProfile) error
+	Delete(ctx context.Context, userID, id uuid.UUID) error
+}

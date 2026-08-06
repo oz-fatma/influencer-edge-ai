@@ -13,12 +13,17 @@ import (
 )
 
 type AnalysisService struct {
-	analyses repository.AnalysisRepository
-	scores   repository.ScoreRepository
+	analyses      repository.AnalysisRepository
+	scores        repository.ScoreRepository
+	brandProfiles repository.BrandProfileRepository
 }
 
-func NewAnalysisService(analyses repository.AnalysisRepository, scores repository.ScoreRepository) *AnalysisService {
-	return &AnalysisService{analyses: analyses, scores: scores}
+func NewAnalysisService(
+	analyses repository.AnalysisRepository,
+	scores repository.ScoreRepository,
+	brandProfiles repository.BrandProfileRepository,
+) *AnalysisService {
+	return &AnalysisService{analyses: analyses, scores: scores, brandProfiles: brandProfiles}
 }
 
 func (s *AnalysisService) Create(ctx context.Context, userID uuid.UUID, req dto.CreateAnalysisRequest) (*dto.AnalysisResponse, error) {
@@ -42,6 +47,14 @@ func (s *AnalysisService) Create(ctx context.Context, userID uuid.UUID, req dto.
 			return nil, domainErr.New(domainErr.ErrBadRequest, "linked score_id not found", err)
 		}
 	}
+	if req.BrandProfileID != nil {
+		if s.brandProfiles == nil {
+			return nil, domainErr.New(domainErr.ErrBadRequest, "linked brand_profile_id not found", nil)
+		}
+		if _, err := s.brandProfiles.GetByID(ctx, userID, *req.BrandProfileID); err != nil {
+			return nil, domainErr.New(domainErr.ErrBadRequest, "linked brand_profile_id not found", err)
+		}
+	}
 
 	analysis := &model.InfluencerAnalysis{
 		UserID:         userID,
@@ -52,6 +65,7 @@ func (s *AnalysisService) Create(ctx context.Context, userID uuid.UUID, req dto.
 		Insights:       req.Insights,
 		RawLLMOutput:   req.RawLLMOutput,
 		ScoreID:        req.ScoreID,
+		BrandProfileID: req.BrandProfileID,
 	}
 	if err := s.analyses.Create(ctx, analysis); err != nil {
 		return nil, err
@@ -92,6 +106,7 @@ func toAnalysisResponse(a *model.InfluencerAnalysis) dto.AnalysisResponse {
 		Insights:       a.Insights,
 		RawLLMOutput:   a.RawLLMOutput,
 		ScoreID:        a.ScoreID,
+		BrandProfileID: a.BrandProfileID,
 		CreatedAt:      a.CreatedAt,
 		UpdatedAt:      a.UpdatedAt,
 	}

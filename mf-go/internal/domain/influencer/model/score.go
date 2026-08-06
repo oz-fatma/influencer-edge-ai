@@ -37,6 +37,7 @@ type InfluencerAnalysis struct {
 	Insights       string
 	RawLLMOutput   string
 	ScoreID        *uuid.UUID
+	BrandProfileID *uuid.UUID
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }

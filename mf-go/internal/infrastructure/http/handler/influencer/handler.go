@@ -15,19 +15,27 @@ import (
 )
 
 type Handler struct {
-	scores     *usecase.ScoreService
-	analyses   *usecase.AnalysisService
-	monitoring *usecase.MonitoringService
-	llm        *llm.Analyzer
+	scores        *usecase.ScoreService
+	analyses      *usecase.AnalysisService
+	brandProfiles *usecase.BrandProfileService
+	monitoring    *usecase.MonitoringService
+	llm           *llm.Analyzer
 }
 
 func NewHandler(
 	scores *usecase.ScoreService,
 	analyses *usecase.AnalysisService,
+	brandProfiles *usecase.BrandProfileService,
 	monitoring *usecase.MonitoringService,
 	llmAnalyzer *llm.Analyzer,
 ) *Handler {
-	return &Handler{scores: scores, analyses: analyses, monitoring: monitoring, llm: llmAnalyzer}
+	return &Handler{
+		scores:        scores,
+		analyses:      analyses,
+		brandProfiles: brandProfiles,
+		monitoring:    monitoring,
+		llm:           llmAnalyzer,
+	}
 }
 
 func (h *Handler) CreateScore(w http.ResponseWriter, r *http.Request) {

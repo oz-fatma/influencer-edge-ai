@@ -192,6 +192,8 @@ func (a *Analyzer) analyzeViaChat(ctx context.Context, settings RuntimeLLMSettin
 	}
 	a.setRequestHeaders(req)
 
+	slog.Info("Chat request user prompt", "user_prompt", userPrompt)
+
 	respBody, err := a.doRequest(req)
 	if err != nil {
 		return nil, "", err

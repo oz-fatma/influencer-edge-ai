@@ -63,6 +63,7 @@ type CreateAnalysisRequest struct {
 	Insights       string     `json:"insights"`
 	RawLLMOutput   string     `json:"raw_llm_output"`
 	ScoreID        *uuid.UUID `json:"score_id"`
+	BrandProfileID *uuid.UUID `json:"brand_profile_id"`
 }
 
 type AnalyzeInfluencerRequest struct {
@@ -129,6 +130,7 @@ type AnalysisResponse struct {
 	Insights       string     `json:"insights,omitempty"`
 	RawLLMOutput   string     `json:"raw_llm_output,omitempty"`
 	ScoreID        *uuid.UUID `json:"score_id,omitempty"`
+	BrandProfileID *uuid.UUID `json:"brand_profile_id,omitempty"`
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 }

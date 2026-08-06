@@ -21,7 +21,8 @@ func NewHandler(service *infraMCP.Service) *Handler {
 
 // ProcessRequest handles POST /api/v1/mcp/request.
 func (h *Handler) ProcessRequest(w http.ResponseWriter, r *http.Request) {
-	if _, ok := middleware.UserIDFromContext(r.Context()); !ok {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
 		response.JSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 		return
 	}
@@ -38,7 +39,7 @@ func (h *Handler) ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.service.HandleMCPRequest(r.Context(), req)
+	result, err := h.service.HandleMCPRequest(r.Context(), userID, req)
 	if err != nil {
 		writeMCPError(w, err)
 		return

@@ -6,7 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/masterfabric-go/masterfabric/internal/application/influencer/dto"
+	domainRepo "github.com/masterfabric-go/masterfabric/internal/domain/influencer/repository"
 	"github.com/masterfabric-go/masterfabric/internal/infrastructure/llm"
 )
 
@@ -21,16 +23,21 @@ var supportedRequestTypes = map[string]struct{}{
 
 // Service routes MCP requests to the configured LLM adapter.
 type Service struct {
-	analyzer *llm.Analyzer
-	model    string
+	analyzer      *llm.Analyzer
+	model         string
+	brandProfiles domainRepo.BrandProfileRepository
 }
 
-func NewService(analyzer *llm.Analyzer, model string) *Service {
-	return &Service{analyzer: analyzer, model: strings.TrimSpace(model)}
+func NewService(analyzer *llm.Analyzer, model string, brandProfiles domainRepo.BrandProfileRepository) *Service {
+	return &Service{
+		analyzer:      analyzer,
+		model:         strings.TrimSpace(model),
+		brandProfiles: brandProfiles,
+	}
 }
 
 // HandleMCPRequest validates the payload, selects an adapter, proxies to Ollama, and enriches the result.
-func (s *Service) HandleMCPRequest(ctx context.Context, req MCPPayload) (RichResult, error) {
+func (s *Service) HandleMCPRequest(ctx context.Context, userID uuid.UUID, req MCPPayload) (RichResult, error) {
 	start := time.Now()
 
 	if _, ok := supportedRequestTypes[req.RequestType]; !ok {
@@ -44,7 +51,7 @@ func (s *Service) HandleMCPRequest(ctx context.Context, req MCPPayload) (RichRes
 
 	switch req.RequestType {
 	case RequestTypeAnalyzeInfluencer:
-		return s.handleAnalyzeInfluencer(ctx, req, model, start)
+		return s.handleAnalyzeInfluencer(ctx, userID, req, model, start)
 	default:
 		return RichResult{}, fmt.Errorf("unsupported request_type: %q", req.RequestType)
 	}
@@ -62,6 +69,7 @@ func (s *Service) resolveModel(_ MCPPayload) string {
 
 func (s *Service) handleAnalyzeInfluencer(
 	ctx context.Context,
+	userID uuid.UUID,
 	req MCPPayload,
 	model string,
 	start time.Time,
@@ -84,6 +92,7 @@ func (s *Service) handleAnalyzeInfluencer(
 	}
 
 	notes := dto.BuildAnalyzePromptWithQuery(profile, legacyNotes, query)
+	notes = dto.AppendBrandContext(notes, s.resolveBrandContext(ctx, userID, req.BrandProfileID))
 
 	if err := dto.ValidateInfluencerName(name); err != nil {
 		return RichResult{}, fmt.Errorf("context.influencer_name: %s", err.Error())
@@ -118,6 +127,33 @@ func (s *Service) handleAnalyzeInfluencer(
 		},
 		Source: SourceOllama,
 	}, nil
+}
+
+func (s *Service) resolveBrandContext(ctx context.Context, userID uuid.UUID, brandProfileID *string) string {
+	if s == nil || s.brandProfiles == nil || brandProfileID == nil {
+		return ""
+	}
+	raw := strings.TrimSpace(*brandProfileID)
+	if raw == "" {
+		return ""
+	}
+	id, err := uuid.Parse(raw)
+	if err != nil || id == uuid.Nil {
+		return ""
+	}
+
+	profile, err := s.brandProfiles.GetByID(ctx, userID, id)
+	if err != nil {
+		return ""
+	}
+
+	return dto.BuildBrandContext(
+		profile.Industry,
+		profile.TargetAudience,
+		profile.BudgetRange,
+		profile.BrandValues,
+		profile.CampaignGoal,
+	)
 }
 
 func contextString(ctx map[string]any, key string) string {

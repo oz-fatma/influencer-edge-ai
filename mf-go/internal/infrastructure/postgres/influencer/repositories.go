@@ -225,10 +225,11 @@ func (r *AnalysisRepo) Create(ctx context.Context, analysis *model.InfluencerAna
 	_, err := r.db.Exec(ctx, `
 		INSERT INTO influencer_analyses (
 			id, user_id, influencer_name, platform, analysis_type,
-			summary, insights, raw_llm_output, score_id, created_at, updated_at
-		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+			summary, insights, raw_llm_output, score_id, brand_profile_id, created_at, updated_at
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
 		analysis.ID, analysis.UserID, analysis.InfluencerName, analysis.Platform, analysis.AnalysisType,
-		analysis.Summary, analysis.Insights, analysis.RawLLMOutput, analysis.ScoreID, analysis.CreatedAt, analysis.UpdatedAt,
+		analysis.Summary, analysis.Insights, analysis.RawLLMOutput, analysis.ScoreID, analysis.BrandProfileID,
+		analysis.CreatedAt, analysis.UpdatedAt,
 	)
 	if err != nil {
 		return domainErr.New(domainErr.ErrInternal, "failed to create analysis", err)
@@ -240,11 +241,11 @@ func (r *AnalysisRepo) GetByID(ctx context.Context, userID, id uuid.UUID) (*mode
 	var a model.InfluencerAnalysis
 	err := r.db.QueryRow(ctx, `
 		SELECT id, user_id, influencer_name, platform, analysis_type,
-			summary, insights, raw_llm_output, score_id, created_at, updated_at
+			summary, insights, raw_llm_output, score_id, brand_profile_id, created_at, updated_at
 		FROM influencer_analyses WHERE id = $1 AND user_id = $2`, id, userID,
 	).Scan(
 		&a.ID, &a.UserID, &a.InfluencerName, &a.Platform, &a.AnalysisType,
-		&a.Summary, &a.Insights, &a.RawLLMOutput, &a.ScoreID, &a.CreatedAt, &a.UpdatedAt,
+		&a.Summary, &a.Insights, &a.RawLLMOutput, &a.ScoreID, &a.BrandProfileID, &a.CreatedAt, &a.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -258,7 +259,7 @@ func (r *AnalysisRepo) GetByID(ctx context.Context, userID, id uuid.UUID) (*mode
 func (r *AnalysisRepo) ListByUser(ctx context.Context, userID uuid.UUID, platform string, limit, offset int) ([]model.InfluencerAnalysis, error) {
 	query := `
 		SELECT id, user_id, influencer_name, platform, analysis_type,
-			summary, insights, raw_llm_output, score_id, created_at, updated_at
+			summary, insights, raw_llm_output, score_id, brand_profile_id, created_at, updated_at
 		FROM influencer_analyses WHERE user_id = $1`
 	args := []any{userID}
 	if platform != "" {
@@ -280,7 +281,7 @@ func (r *AnalysisRepo) ListByUser(ctx context.Context, userID uuid.UUID, platfor
 		var a model.InfluencerAnalysis
 		if err := rows.Scan(
 			&a.ID, &a.UserID, &a.InfluencerName, &a.Platform, &a.AnalysisType,
-			&a.Summary, &a.Insights, &a.RawLLMOutput, &a.ScoreID, &a.CreatedAt, &a.UpdatedAt,
+			&a.Summary, &a.Insights, &a.RawLLMOutput, &a.ScoreID, &a.BrandProfileID, &a.CreatedAt, &a.UpdatedAt,
 		); err != nil {
 			return nil, domainErr.New(domainErr.ErrInternal, "failed to scan analysis", err)
 		}
