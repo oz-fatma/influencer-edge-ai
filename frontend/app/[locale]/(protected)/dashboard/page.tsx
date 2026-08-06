@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { getUser, getUserDisplayName, type AuthUser } from "@/lib/auth";
 import {
   handleUnauthorizedRedirect,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/api";
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [scores, setScores] = useState<InfluencerScore[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,53 +48,52 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          Welcome{displayName ? `, ${displayName}` : ""} 👋
+          {displayName ? t("welcomeWithName", { name: displayName }) : t("welcome")}{" "}
+          👋
         </h1>
-        <p className="mt-1 text-[var(--muted)]">
-          Overview of your InfluencerEdge AI dashboard
-        </p>
+        <p className="mt-1 text-[var(--muted)]">{t("subtitle")}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
-          label="Influencers in Pool"
-          value={loading ? "—" : String(scores.length)}
+          label={t("stats.influencersInPool")}
+          value={loading ? t("stats.emptyValue") : String(scores.length)}
         />
         <StatCard
-          label="Average Score"
-          value={loading ? "—" : avgScore.toFixed(1)}
-          suffix={loading ? undefined : "/100"}
+          label={t("stats.averageScore")}
+          value={loading ? t("stats.emptyValue") : avgScore.toFixed(1)}
+          suffix={loading ? undefined : t("stats.scoreSuffix")}
         />
         <StatCard
-          label="High Fit"
-          value={loading ? "—" : String(highFit)}
-          suffix={loading ? undefined : " candidates"}
+          label={t("stats.highFit")}
+          value={loading ? t("stats.emptyValue") : String(highFit)}
+          suffix={loading ? undefined : t("stats.candidatesSuffix")}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-          <h2 className="mb-4 text-lg font-semibold">Quick Access</h2>
+          <h2 className="mb-4 text-lg font-semibold">{t("quickAccess.title")}</h2>
           <div className="space-y-3">
             <QuickLink
               href="/influencers"
-              title="Influencer Pool"
-              desc="Browse the scored influencer list"
+              title={t("quickAccess.influencerPoolTitle")}
+              desc={t("quickAccess.influencerPoolDesc")}
             />
             <QuickLink
               href="/matching"
-              title="AI Matching"
-              desc="View Web-LLM analysis results"
+              title={t("quickAccess.aiMatchingTitle")}
+              desc={t("quickAccess.aiMatchingDesc")}
             />
           </div>
         </section>
 
         <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
-          <h2 className="mb-4 text-lg font-semibold">Recent Scores</h2>
+          <h2 className="mb-4 text-lg font-semibold">{t("recentScores.title")}</h2>
           {loading ? (
-            <p className="text-sm text-[var(--muted)]">Loading...</p>
+            <p className="text-sm text-[var(--muted)]">{t("recentScores.loading")}</p>
           ) : scores.length === 0 ? (
-            <p className="text-sm text-[var(--muted)]">No scores added yet</p>
+            <p className="text-sm text-[var(--muted)]">{t("recentScores.empty")}</p>
           ) : (
             <ul className="space-y-3">
               {scores.slice(0, 3).map((s) => (

@@ -2,22 +2,30 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useAnalysisContext } from "@/context/AnalysisContext";
 import {
   analysesApi,
   ApiError,
+  brandProfilesApi,
   handleUnauthorizedRedirect,
   isUnauthorized,
   monitoringApi,
   scoresApi,
   SERVER_LLM_MODEL_ID,
   SERVER_LLM_ANALYZE_TIMEOUT_MS,
+  type BrandProfile,
   type InfluencerAnalysis,
   type InfluencerAnalysisResult,
   type InfluencerScore,
 } from "@/lib/api";
 import { sendMCPRequest, type RichResult } from "@/lib/mcp";
-import { buildMCPContext, profileSummary, DEFAULT_ANALYZE_QUERY, MAX_ANALYZE_QUERY_LEN } from "@/lib/influencer-profile";
+import {
+  buildMCPContext,
+  profileSummary,
+  DEFAULT_ANALYZE_QUERY,
+  MAX_ANALYZE_QUERY_LEN,
+} from "@/lib/influencer-profile";
 import { scoreColor } from "@/lib/score-utils";
 import {
   analyzeInfluencer,
@@ -85,8 +93,9 @@ function truncateSummary(text: string, maxLen = 100): string {
   return `${trimmed.slice(0, maxLen)}...`;
 }
 
-function formatAnalysisDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-US", {
+function formatAnalysisDate(iso: string, locale: string): string {
+  const intlLocale = locale === "tr" ? "tr-TR" : "en-US";
+  return new Intl.DateTimeFormat(intlLocale, {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -127,6 +136,8 @@ function shouldFallbackToWebLLM(error: unknown): boolean {
 }
 
 export default function MatchingPage() {
+  const t = useTranslations("matching");
+  const locale = useLocale();
   const pathname = usePathname();
   const {
     analyzing,
@@ -147,6 +158,7 @@ export default function MatchingPage() {
 
   const [scores, setScores] = useState<InfluencerScore[]>([]);
   const [analyses, setAnalyses] = useState<InfluencerAnalysis[]>([]);
+  const [brandProfiles, setBrandProfiles] = useState<BrandProfile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -156,6 +168,8 @@ export default function MatchingPage() {
   const [modelProgressText, setModelProgressText] = useState("");
   const [userQuestion, setUserQuestion] = useState("");
   const [askedQuestion, setAskedQuestion] = useState<string | null>(null);
+  const [selectedBrandProfileId, setSelectedBrandProfileId] = useState<string | null>(null);
+  const [analyzedForBrandName, setAnalyzedForBrandName] = useState<string | null>(null);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -165,15 +179,17 @@ export default function MatchingPage() {
 
     async function loadData() {
       try {
-        const [scoresData, analysesData] = await Promise.all([
+        const [scoresData, analysesData, brandProfilesData] = await Promise.all([
           scoresApi.list(),
           analysesApi.list(),
+          brandProfilesApi.list(),
         ]);
         if (cancelled) return;
 
         const list = scoresData.scores ?? [];
         setScores(list);
         setAnalyses(analysesData.analyses ?? []);
+        setBrandProfiles(brandProfilesData.brand_profiles ?? []);
         setSelectedId((prev) => {
           const contextId =
             (analyzing || liveResult) && selectedInfluencerId
@@ -192,7 +208,7 @@ export default function MatchingPage() {
           handleUnauthorizedRedirect("/matching");
           return;
         }
-        setError("Failed to load data. Please try again.");
+        setError(t("errors.loadFailed"));
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -227,6 +243,7 @@ export default function MatchingPage() {
     analysisType: "ollama" | "web-llm",
     model: string,
     startTime: number,
+    brandProfileId?: string | null,
   ) {
     if (!selected) return;
 
@@ -257,6 +274,7 @@ export default function MatchingPage() {
       insights: result.insights.join("\n"),
       raw_llm_output: rawOutput,
       score_id: selected.id,
+      ...(brandProfileId ? { brand_profile_id: brandProfileId } : {}),
     });
 
     setScores((prev) =>
@@ -267,13 +285,17 @@ export default function MatchingPage() {
     setAnalysisSource(analysisType);
   }
 
-  async function runWebLLMAnalyze(startTime: number, query: string) {
+  async function runWebLLMAnalyze(
+    startTime: number,
+    query: string,
+    brandProfileId?: string | null,
+  ) {
     if (!selected) return;
 
     setAnalysisPhase("browser");
     if (!isWebLLMReady()) {
       setModelProgress(0);
-      setModelProgressText("Preparing browser model...");
+      setModelProgressText(t("analyze.preparingBrowser"));
     }
 
     const { result, rawOutput } = await analyzeInfluencer(
@@ -300,7 +322,14 @@ export default function MatchingPage() {
 
     setEngineBusy(false);
     setModelProgress(null);
-    await persistAnalysis(result, rawOutput, "web-llm", WEBLLM_MODEL_ID, startTime);
+    await persistAnalysis(
+      result,
+      rawOutput,
+      "web-llm",
+      WEBLLM_MODEL_ID,
+      startTime,
+      brandProfileId,
+    );
   }
 
   async function handleAnalyze() {
@@ -308,11 +337,15 @@ export default function MatchingPage() {
 
     const trimmedQuestion = userQuestion.trim();
     if (trimmedQuestion.length > MAX_ANALYZE_QUERY_LEN) {
-      setAnalysisError(`Question must be at most ${MAX_ANALYZE_QUERY_LEN} characters.`);
+      setAnalysisError(t("errors.questionTooLong", { max: MAX_ANALYZE_QUERY_LEN }));
       return;
     }
 
     const query = trimmedQuestion || MCP_ANALYZE_QUERY;
+    const brandProfileId = selectedBrandProfileId;
+    const brandName = brandProfileId
+      ? brandProfiles.find((p) => p.id === brandProfileId)?.name ?? null
+      : null;
 
     setAnalyzing(true);
     setAnalysisPhase("server");
@@ -322,6 +355,7 @@ export default function MatchingPage() {
     setLiveResult(null);
     setAnalysisSource(null);
     setAskedQuestion(trimmedQuestion || null);
+    setAnalyzedForBrandName(brandName);
     setModelProgress(null);
 
     const startTime = performance.now();
@@ -342,13 +376,14 @@ export default function MatchingPage() {
             notes: selected.notes,
           }),
           query,
+          ...(brandProfileId ? { brand_profile_id: brandProfileId } : {}),
         },
         undefined,
         SERVER_LLM_ANALYZE_TIMEOUT_MS,
       );
 
       const { result, rawOutput, model } = mapMCPRichResultToAnalysis(rich);
-      await persistAnalysis(result, rawOutput, "ollama", model, startTime);
+      await persistAnalysis(result, rawOutput, "ollama", model, startTime, brandProfileId);
     } catch (serverErr) {
       if (isUnauthorized(serverErr)) {
         handleUnauthorizedRedirect("/matching");
@@ -375,12 +410,10 @@ export default function MatchingPage() {
         return;
       }
 
-      setAnalysisNotice(
-        "Server Ollama timed out or is unavailable. Continuing with browser WebLLM…",
-      );
+      setAnalysisNotice(t("notice.webllmFallback"));
 
       try {
-        await runWebLLMAnalyze(startTime, query);
+        await runWebLLMAnalyze(startTime, query, brandProfileId);
       } catch (browserErr) {
         const latencyMs = Math.round(performance.now() - startTime);
         try {
@@ -413,6 +446,8 @@ export default function MatchingPage() {
     setSelectedInfluencerId(null);
     setAskedQuestion(null);
     setUserQuestion("");
+    setSelectedBrandProfileId(null);
+    setAnalyzedForBrandName(null);
     setExpandedHistoryId(null);
   }
 
@@ -439,12 +474,12 @@ export default function MatchingPage() {
       ? parseStoredInsights(savedAnalysis.insights)
       : [];
 
-  const analyzeButtonLabel = (() => {
-    if (!analyzing) return "Analyze";
-    if (analysisPhase === "server") return "Analyzing on server...";
-    if (engineBusy && !isWebLLMReady()) return "Loading browser model...";
-    return "Analyzing in browser...";
-  })();
+  const analyzeButtonLabel = useMemo(() => {
+    if (!analyzing) return t("analyze.button");
+    if (analysisPhase === "server") return t("analyze.server");
+    if (engineBusy && !isWebLLMReady()) return t("analyze.browserLoading");
+    return t("analyze.browser");
+  }, [analyzing, analysisPhase, engineBusy, t]);
 
   if (error) {
     return (
@@ -458,29 +493,29 @@ export default function MatchingPage() {
     <div className="relative space-y-6">
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-[var(--background)]/70 backdrop-blur-sm">
-          <p className="text-[var(--muted)]">Loading...</p>
+          <p className="text-[var(--muted)]">{t("loading")}</p>
         </div>
       )}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">AI Matching Panel</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-[var(--muted)]">
-          Hybrid analysis: server Ollama ({SERVER_LLM_MODEL_ID}) with WebLLM
-          fallback ({WEBLLM_MODEL_ID})
+          {t("subtitle", {
+            serverModel: SERVER_LLM_MODEL_ID,
+            browserModel: WEBLLM_MODEL_ID,
+          })}
         </p>
       </div>
 
       {scores.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-16 text-center">
-          <p className="text-lg font-medium">No scores added yet</p>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Add influencer scores first before running matching analysis.
-          </p>
+          <p className="text-lg font-medium">{t("emptyScores.title")}</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">{t("emptyScores.description")}</p>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
           <aside className="space-y-2 lg:col-span-1">
             <p className="mb-3 text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
-              Select Influencer
+              {t("selectInfluencer")}
             </p>
             {scores.map((s) => (
               <button
@@ -514,7 +549,7 @@ export default function MatchingPage() {
                     <p className="mt-2 text-xs text-[var(--muted)]">{profileSummary(selected)}</p>
                     {selected.notes && (
                       <p className="mt-1 text-xs text-[var(--muted)]">
-                        Collaborations: {selected.notes}
+                        {t("collaborations", { notes: selected.notes })}
                       </p>
                     )}
                   </div>
@@ -529,11 +564,46 @@ export default function MatchingPage() {
 
                 <div className="mt-5">
                   <label
+                    htmlFor="brand-profile"
+                    className="mb-1.5 block text-sm font-medium text-[var(--foreground)]"
+                  >
+                    {t("brandProfile.label")}{" "}
+                    <span className="font-normal text-[var(--muted)]">
+                      {t("brandProfile.optional")}
+                    </span>
+                  </label>
+                  <select
+                    id="brand-profile"
+                    value={selectedBrandProfileId ?? ""}
+                    onChange={(e) =>
+                      setSelectedBrandProfileId(e.target.value || null)
+                    }
+                    disabled={analyzing || engineBusy}
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 disabled:opacity-50"
+                  >
+                    <option value="">{t("brandProfile.none")}</option>
+                    {brandProfiles.map((profile) => (
+                      <option key={profile.id} value={profile.id}>
+                        {profile.name}
+                      </option>
+                    ))}
+                  </select>
+                  {brandProfiles.length === 0 && (
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      {t("brandProfile.emptyHint")}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-5">
+                  <label
                     htmlFor="analyze-question"
                     className="mb-1.5 block text-sm font-medium text-[var(--foreground)]"
                   >
-                    Your question{" "}
-                    <span className="font-normal text-[var(--muted)]">(optional)</span>
+                    {t("question.label")}{" "}
+                    <span className="font-normal text-[var(--muted)]">
+                      {t("question.optional")}
+                    </span>
                   </label>
                   <textarea
                     id="analyze-question"
@@ -542,19 +612,23 @@ export default function MatchingPage() {
                     onChange={(e) => setUserQuestion(e.target.value)}
                     maxLength={MAX_ANALYZE_QUERY_LEN}
                     disabled={analyzing || engineBusy}
-                    placeholder="e.g. Is this influencer a good fit for a young tech brand?"
+                    placeholder={t("question.placeholder")}
                     className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-3 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 disabled:opacity-50"
                   />
                   <p className="mt-1 text-xs text-[var(--muted)]">
-                    {userQuestion.length}/{MAX_ANALYZE_QUERY_LEN} — leave empty for default
-                    analysis
+                    {t("question.charCount", {
+                      current: userQuestion.length,
+                      max: MAX_ANALYZE_QUERY_LEN,
+                    })}
                   </p>
                 </div>
 
                 {modelProgress !== null && (
                   <div className="mt-5">
                     <div className="mb-1.5 flex items-center justify-between text-xs text-[var(--muted)]">
-                      <span>{modelProgressText || "Loading browser model..."}</span>
+                      <span>
+                        {modelProgressText || t("analyze.browserLoading")}
+                      </span>
                       <span>{modelProgress}%</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-elevated)]">
@@ -568,24 +642,24 @@ export default function MatchingPage() {
 
                 <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <ScorePill
-                    label={liveResult ? "Overall (AI)" : "Overall"}
-                    description="Overall fit score"
+                    label={liveResult ? t("scores.overallAi") : t("scores.overall")}
+                    description={t("scores.overallDesc")}
                     value={displayScores.overall}
                     highlight
                   />
                   <ScorePill
-                    label="Engagement"
-                    description="Follower engagement rate"
+                    label={t("scores.engagement")}
+                    description={t("scores.engagementDesc")}
                     value={displayScores.engagement}
                   />
                   <ScorePill
-                    label="Audience"
-                    description="Audience-brand alignment"
+                    label={t("scores.audience")}
+                    description={t("scores.audienceDesc")}
                     value={displayScores.audience}
                   />
                   <ScorePill
-                    label="Brand Fit"
-                    description="Brand values match"
+                    label={t("scores.brandFit")}
+                    description={t("scores.brandFitDesc")}
                     value={displayScores.brandFit}
                   />
                 </div>
@@ -605,10 +679,16 @@ export default function MatchingPage() {
 
               {displaySummary ? (
                 <>
+                  {liveResult && analyzedForBrandName && (
+                    <div className="inline-flex rounded-full border border-[var(--accent)]/30 bg-[var(--accent-muted)] px-4 py-1.5 text-sm font-medium text-[var(--accent)]">
+                      {t("analyzedFor", { brandName: analyzedForBrandName })}
+                    </div>
+                  )}
+
                   {askedQuestion && (
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] px-5 py-4">
                       <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-                        Question
+                        {t("questionHeading")}
                       </p>
                       <p className="mt-1 text-sm leading-relaxed">{askedQuestion}</p>
                     </div>
@@ -616,11 +696,12 @@ export default function MatchingPage() {
 
                   <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
                     <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-                      AI Summary
+                      {t("summary.title")}
                       {liveResult && (
                         <span className="ml-2 normal-case text-[var(--accent)]">
-                          · new
-                          {analysisSource === "web-llm" ? " (browser)" : " (server)"}
+                          {analysisSource === "web-llm"
+                            ? t("summary.newBrowser")
+                            : t("summary.newServer")}
                         </span>
                       )}
                     </h3>
@@ -630,7 +711,7 @@ export default function MatchingPage() {
                   {displayInsights.length > 0 && (
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
                       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-                        Insights
+                        {t("insights.title")}
                       </h3>
                       <ul className="space-y-2">
                         {displayInsights.map((insight, i) => (
@@ -646,11 +727,12 @@ export default function MatchingPage() {
                   {pastAnalysisHistory.length > 0 && (
                     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6">
                       <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-[var(--muted)]">
-                        Analysis History
+                        {t("history.title")}
                       </h3>
                       <p className="mb-4 text-xs text-[var(--muted)]">
-                        {pastAnalysisHistory.length} earlier{" "}
-                        {pastAnalysisHistory.length === 1 ? "analysis" : "analyses"}
+                        {pastAnalysisHistory.length === 1
+                          ? t("history.earlierOne", { count: pastAnalysisHistory.length })
+                          : t("history.earlierOther", { count: pastAnalysisHistory.length })}
                       </p>
                       <div className="space-y-2">
                         {pastAnalysisHistory.map((entry) => {
@@ -680,7 +762,7 @@ export default function MatchingPage() {
                                 </span>
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs font-medium text-[var(--muted)]">
-                                    {formatAnalysisDate(entry.created_at)}
+                                    {formatAnalysisDate(entry.created_at, locale)}
                                     <span className="ml-2 capitalize text-[var(--foreground)]/70">
                                       · {entry.analysis_type.replace(/-/g, " ")}
                                     </span>
@@ -716,11 +798,9 @@ export default function MatchingPage() {
                 !analysisError &&
                 !analyzing && (
                   <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-8 text-center">
-                    <p className="font-medium text-[var(--muted)]">
-                      No analysis yet
-                    </p>
+                    <p className="font-medium text-[var(--muted)]">{t("noAnalysis.title")}</p>
                     <p className="mt-2 text-sm text-[var(--muted)]">
-                      Click &quot;Analyze&quot; for the selected influencer.
+                      {t("noAnalysis.description")}
                     </p>
                   </div>
                 )

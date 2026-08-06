@@ -200,6 +200,7 @@ export type InfluencerAnalysis = {
   insights: string;
   raw_llm_output?: string;
   score_id?: string;
+  brand_profile_id?: string;
   created_at: string;
   updated_at: string;
 };
@@ -259,10 +260,66 @@ export const analysesApi = {
     insights?: string;
     raw_llm_output?: string;
     score_id?: string;
+    brand_profile_id?: string;
   }) =>
     apiFetch<{ analysis: InfluencerAnalysis }>("/api/v1/analyses", {
       method: "POST",
       body: JSON.stringify(payload),
+    }),
+};
+
+export type BrandProfile = {
+  id: string;
+  user_id: string;
+  name: string;
+  industry: string;
+  target_audience: string;
+  budget_range?: string;
+  brand_values: string;
+  campaign_goal: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateBrandProfilePayload = {
+  name: string;
+  industry: string;
+  target_audience: string;
+  budget_range?: string;
+  brand_values: string;
+  campaign_goal: string;
+};
+
+export type UpdateBrandProfilePayload = {
+  name?: string;
+  industry?: string;
+  target_audience?: string;
+  budget_range?: string;
+  brand_values?: string;
+  campaign_goal?: string;
+};
+
+export const brandProfilesApi = {
+  list: () =>
+    apiFetch<{ brand_profiles: BrandProfile[]; count: number }>(
+      "/api/v1/brand-profiles",
+    ),
+
+  create: (payload: CreateBrandProfilePayload) =>
+    apiFetch<{ brand_profile: BrandProfile }>("/api/v1/brand-profiles", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  update: (id: string, payload: UpdateBrandProfilePayload) =>
+    apiFetch<{ brand_profile: BrandProfile }>(`/api/v1/brand-profiles/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  delete: (id: string) =>
+    apiFetch<{ message: string }>(`/api/v1/brand-profiles/${id}`, {
+      method: "DELETE",
     }),
 };
 

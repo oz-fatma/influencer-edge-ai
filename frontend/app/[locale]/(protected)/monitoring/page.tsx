@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   authApi,
   handleUnauthorizedRedirect,
@@ -18,6 +19,9 @@ export default function MonitoringPage() {
   const router = useRouter();
   const routerRef = useRef(router);
   routerRef.current = router;
+  const locale = useLocale();
+  const t = useTranslations("monitoring");
+  const intlLocale = locale === "tr" ? "tr-TR" : "en-US";
 
   const [stats, setStats] = useState<MonitoringStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,7 +56,7 @@ export default function MonitoringPage() {
           return;
         }
         if (isInitial) {
-          setError("Failed to load monitoring data.");
+          setError(t("errors.loadFailed"));
         }
       } finally {
         if (!cancelled && isInitial) {
@@ -67,12 +71,12 @@ export default function MonitoringPage() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-[var(--muted)]">
-        Loading...
+        {t("loading")}
       </div>
     );
   }
@@ -80,47 +84,45 @@ export default function MonitoringPage() {
   if (error || !stats) {
     return (
       <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-6 py-8 text-center text-red-400">
-        {error ?? "Failed to fetch data"}
+        {error ?? t("errors.fetchFailed")}
       </div>
     );
   }
+
+  const lastUpdatedTime = lastUpdated
+    ? lastUpdated.toLocaleTimeString(intlLocale, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : "";
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">LLM Monitoring</h1>
-          <p className="mt-1 text-[var(--muted)]">
-            Web-LLM call metrics and performance summary
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="mt-1 text-[var(--muted)]">{t("subtitle")}</p>
         </div>
         {lastUpdated && (
           <p className="text-xs text-[var(--muted)]">
-            Last updated:{" "}
-            {lastUpdated.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            })}
+            {t("lastUpdated", { time: lastUpdatedTime })}
             <span className="ml-2 inline-flex items-center gap-1">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--success)]" />
-              10s
+              {t("pollInterval")}
             </span>
           </p>
         )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label={t("stats.totalCalls")} value={String(stats.total_calls)} />
         <StatCard
-          label="Total Calls"
-          value={String(stats.total_calls)}
-        />
-        <StatCard
-          label="Average Response Time"
+          label={t("stats.avgResponseTime")}
           value={formatLatency(stats.avg_latency_ms)}
         />
         <StatCard
-          label="Error Rate"
+          label={t("stats.errorRate")}
           value={`${stats.error_rate.toFixed(1)}%`}
           highlight={stats.error_rate > 0}
         />
@@ -128,15 +130,15 @@ export default function MonitoringPage() {
 
       <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">
         <div className="border-b border-[var(--border)] px-5 py-4">
-          <h2 className="text-lg font-semibold">Recent Calls</h2>
+          <h2 className="text-lg font-semibold">{t("recentCalls.title")}</h2>
           <p className="text-sm text-[var(--muted)]">
-            Latest {stats.recent_calls.length} LLM calls
+            {t("recentCalls.subtitle", { count: stats.recent_calls.length })}
           </p>
         </div>
 
         {stats.recent_calls.length === 0 ? (
           <div className="px-6 py-12 text-center text-[var(--muted)]">
-            No LLM calls recorded yet
+            {t("recentCalls.empty")}
           </div>
         ) : (
           <>
@@ -144,11 +146,11 @@ export default function MonitoringPage() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border)] text-[var(--muted)]">
-                    <th className="px-5 py-3 font-medium">Influencer</th>
-                    <th className="px-5 py-3 font-medium">Model</th>
-                    <th className="px-5 py-3 font-medium">Duration</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 font-medium">Time</th>
+                    <th className="px-5 py-3 font-medium">{t("table.influencer")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.model")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.duration")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.status")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.time")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -166,7 +168,7 @@ export default function MonitoringPage() {
                         <StatusBadge status={call.status} />
                       </td>
                       <td className="px-5 py-4 text-[var(--muted)]">
-                        {formatTimestamp(call.timestamp)}
+                        {formatTimestamp(call.timestamp, locale)}
                       </td>
                     </tr>
                   ))}
@@ -189,7 +191,7 @@ export default function MonitoringPage() {
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-[var(--muted)]">
                     <span className="font-mono">{formatLatency(call.latency_ms)}</span>
-                    <span>{formatTimestamp(call.timestamp)}</span>
+                    <span>{formatTimestamp(call.timestamp, locale)}</span>
                   </div>
                 </article>
               ))}
@@ -225,7 +227,10 @@ function StatCard({
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const t = useTranslations("monitoring");
   const isSuccess = status === "success";
+  const label = isSuccess ? t("status.success") : t("status.error");
+
   return (
     <span
       className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
@@ -234,7 +239,7 @@ function StatusBadge({ status }: { status: string }) {
           : "bg-red-500/15 text-red-400"
       }`}
     >
-      {status}
+      {label}
     </span>
   );
 }

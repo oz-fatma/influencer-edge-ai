@@ -1,23 +1,26 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import LanguageToggle from "@/components/LanguageToggle";
 import { authApi, isUnauthorized } from "@/lib/api";
 import { clearAuth, getIsAdmin, setIsAdmin } from "@/lib/auth";
 
 const baseNavItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/influencers", label: "Influencer Pool" },
-  { href: "/matching", label: "Matching Panel" },
+  { href: "/dashboard", labelKey: "dashboard" as const },
+  { href: "/influencers", labelKey: "influencerPool" as const },
+  { href: "/brand-profiles", labelKey: "brandProfiles" as const },
+  { href: "/matching", labelKey: "matchingPanel" as const },
 ];
 
 const adminNavItems = [
-  { href: "/monitoring", label: "Monitoring" },
-  { href: "/admin", label: "Admin" },
+  { href: "/monitoring", labelKey: "monitoring" as const },
+  { href: "/admin", labelKey: "admin" as const },
 ];
 
 export default function Navbar() {
+  const t = useTranslations("nav");
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -66,7 +69,7 @@ export default function Navbar() {
               IE
             </span>
             <span className="text-sm font-semibold tracking-tight text-[var(--foreground)]">
-              InfluencerEdge
+              {t("appName")}
             </span>
           </Link>
 
@@ -83,20 +86,23 @@ export default function Navbar() {
                       : "text-[var(--muted)] hover:bg-[var(--surface-elevated)] hover:text-[var(--foreground)]"
                   }`}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        <button
-          onClick={handleLogout}
-          disabled={loggingOut}
-          className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:border-[var(--accent)]/40 hover:text-[var(--foreground)] disabled:opacity-50"
-        >
-          {loggingOut ? "Logging out..." : "Logout"}
-        </button>
+        <div className="flex items-center gap-4">
+          <LanguageToggle />
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--muted)] transition-colors hover:border-[var(--accent)]/40 hover:text-[var(--foreground)] disabled:opacity-50"
+          >
+            {loggingOut ? t("loggingOut") : t("logout")}
+          </button>
+        </div>
       </div>
     </header>
   );

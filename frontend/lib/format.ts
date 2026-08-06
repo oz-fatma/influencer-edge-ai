@@ -5,8 +5,9 @@ export function formatLatency(ms: number): string {
   return `${Math.round(ms)} ms`;
 }
 
-export function formatTimestamp(ts: number): string {
-  return new Intl.DateTimeFormat("en-US", {
+export function formatTimestamp(ts: number, locale = "en-US"): string {
+  const intlLocale = locale === "tr" || locale.startsWith("tr-") ? "tr-TR" : "en-US";
+  return new Intl.DateTimeFormat(intlLocale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

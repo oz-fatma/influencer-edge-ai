@@ -1,0 +1,404 @@
+{
+  "metadata": {
+    "title": "InfluencerEdge AI",
+    "description": "Influencer–agency matching platform"
+  },
+  "common": {
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "optional": "(optional)",
+    "required": "*",
+    "processing": "Processing..."
+  },
+  "nav": {
+    "appName": "InfluencerEdge",
+    "dashboard": "Dashboard",
+    "influencerPool": "Influencer Pool",
+    "brandProfiles": "Brand Profiles",
+    "matchingPanel": "Matching Panel",
+    "monitoring": "Monitoring",
+    "admin": "Admin",
+    "logout": "Logout",
+    "loggingOut": "Logging out..."
+  },
+  "auth": {
+    "loading": "Loading...",
+    "title": "InfluencerEdge AI",
+    "subtitle": "Sign in to the influencer–agency matching platform",
+    "tabs": {
+      "signIn": "Sign In",
+      "register": "Register"
+    },
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "password": "Password"
+    },
+    "placeholders": {
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "email": "you@agency.com",
+      "password": "••••••••"
+    },
+    "submit": {
+      "signIn": "Sign In",
+      "createAccount": "Create Account",
+      "processing": "Processing..."
+    },
+    "validation": {
+      "emailRequired": "Email is required",
+      "passwordRequired": "Password is required",
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "passwordMinLength": "Password must be at least 8 characters"
+    },
+    "errors": {
+      "sessionCookieRestore": "Session cookie could not be set. Please sign in again.",
+      "sessionCookieAfterLogin": "Signed in, but the session cookie could not be set. Try again or clear site data.",
+      "connectionError": "Connection error — is the backend running?"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome",
+    "welcomeWithName": "Welcome, {name}",
+    "subtitle": "Overview of your InfluencerEdge AI dashboard",
+    "stats": {
+      "influencersInPool": "Influencers in Pool",
+      "averageScore": "Average Score",
+      "highFit": "High Fit",
+      "scoreSuffix": "/100",
+      "candidatesSuffix": " candidates",
+      "emptyValue": "—"
+    },
+    "quickAccess": {
+      "title": "Quick Access",
+      "influencerPoolTitle": "Influencer Pool",
+      "influencerPoolDesc": "Browse the scored influencer list",
+      "aiMatchingTitle": "AI Matching",
+      "aiMatchingDesc": "View Web-LLM analysis results"
+    },
+    "recentScores": {
+      "title": "Recent Scores",
+      "loading": "Loading...",
+      "empty": "No scores added yet"
+    }
+  },
+  "influencers": {
+    "title": "Influencer Pool",
+    "subtitle": "Web-LLM score results",
+    "addInfluencer": "Add Influencer",
+    "addFirstInfluencer": "+ Add your first influencer",
+    "loading": "Loading...",
+    "errors": {
+      "loadFailed": "Failed to load scores. Please try again.",
+      "refreshFailed": "Failed to refresh the list. Please reload the page."
+    },
+    "success": {
+      "added": "Influencer added successfully."
+    },
+    "empty": {
+      "title": "No scores added yet",
+      "description": "Scores will appear here when Web-LLM analysis results are saved or when you add influencers manually."
+    },
+    "table": {
+      "influencer": "Influencer",
+      "platform": "Platform",
+      "overall": "Overall",
+      "engagement": "Engagement",
+      "audience": "Audience",
+      "brandFit": "Brand Fit",
+      "profile": "Profile"
+    },
+    "mobile": {
+      "engagement": "Engagement",
+      "audience": "Audience",
+      "brand": "Brand",
+      "collaborations": "Collaborations: {notes}"
+    }
+  },
+  "influencersModal": {
+    "title": "Add New Influencer",
+    "subtitle": "Add structured profile info to the pool. Run Analyze in Matching to generate scores.",
+    "close": "Close",
+    "fields": {
+      "influencerName": "Influencer Name",
+      "platform": "Platform",
+      "niche": "Niche",
+      "audienceRegion": "Audience — region",
+      "audienceDemographics": "Audience — demographics",
+      "followers": "Followers",
+      "engagementRate": "Engagement (%)",
+      "contentFormat": "Content format",
+      "pastCollaborationsOptional": "Past collaborations (optional)"
+    },
+    "placeholders": {
+      "influencerName": "e.g. Jane Smith",
+      "engagementRate": "4.2",
+      "pastCollaborations": "local cosmetic brands"
+    },
+    "validation": {
+      "nameRequired": "Influencer name is required",
+      "nicheRequired": "Niche is required",
+      "audienceRegionRequired": "Audience region is required",
+      "audienceDemoRequired": "Audience demographics is required",
+      "followerRangeRequired": "Follower range is required",
+      "engagementRateRequired": "Engagement rate is required",
+      "engagementRateRange": "Engagement rate must be between 0 and 100",
+      "contentFormatRequired": "Select at least one content format"
+    },
+    "errors": {
+      "addFailed": "Failed to add influencer. Please try again."
+    },
+    "submit": {
+      "cancel": "Cancel",
+      "add": "Add",
+      "saving": "Saving..."
+    },
+    "options": {
+      "niches": {
+        "beautyAndSkincare": "Beauty and skincare",
+        "fashion": "Fashion",
+        "fitnessAndHealth": "Fitness and health",
+        "foodAndRecipes": "Food and recipes",
+        "travel": "Travel",
+        "tech": "Tech",
+        "homeDecor": "Home decor",
+        "parenting": "Parenting",
+        "comedy": "Comedy",
+        "gaming": "Gaming"
+      },
+      "audienceGeo": {
+        "turkey": "Turkey",
+        "usa": "United States",
+        "europe": "Europe",
+        "global": "Global"
+      },
+      "audienceDemo": {
+        "women1824": "Women 18-24",
+        "women2534": "Women 25-34",
+        "men1824": "Men 18-24",
+        "men2534": "Men 25-34",
+        "mixed1834": "Mixed 18-34",
+        "mixed35plus": "Mixed 35+"
+      },
+      "followerRanges": {
+        "10k50k": "10K-50K",
+        "50k100k": "50K-100K",
+        "100k500k": "100K-500K",
+        "500k1m": "500K-1M",
+        "1mPlus": "1M+"
+      },
+      "contentFormats": {
+        "reels": "Reels",
+        "story": "Story",
+        "post": "Post",
+        "video": "Video"
+      },
+      "platforms": {
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "twitter": "Twitter",
+        "linkedin": "LinkedIn",
+        "other": "Other"
+      }
+    }
+  },
+  "brandProfiles": {
+    "title": "Brand Profiles",
+    "subtitle": "Save your brand context for tailored influencer fit analysis",
+    "newProfile": "New Brand Profile",
+    "createFirstProfile": "+ Create your first brand profile",
+    "loading": "Loading...",
+    "form": {
+      "editTitle": "Edit Brand Profile",
+      "createTitle": "New Brand Profile",
+      "cancel": "Cancel",
+      "saveChanges": "Save Changes",
+      "createProfile": "Create Profile",
+      "saving": "Saving..."
+    },
+    "fields": {
+      "name": "Name",
+      "industry": "Industry / Niche",
+      "targetAudience": "Target Audience",
+      "budgetRangeOptional": "Budget Range (optional)",
+      "campaignGoal": "Campaign Goal",
+      "brandValues": "Brand Values"
+    },
+    "placeholders": {
+      "name": "Runfit",
+      "industry": "Fitness and active lifestyle",
+      "targetAudience": "18-30, women and men, major cities",
+      "budgetRange": "5,000-15,000 TL",
+      "campaignGoal": "Brand awareness",
+      "brandValues": "Energetic, motivating, friendly (not elitist)"
+    },
+    "empty": {
+      "title": "No brand profiles yet",
+      "description": "Create a profile to describe your brand for influencer matching."
+    },
+    "card": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "targetAudience": "Target audience",
+      "budget": "Budget",
+      "campaignGoal": "Campaign goal",
+      "brandValues": "Brand values"
+    },
+    "confirmDelete": "Delete brand profile \"{name}\"? This cannot be undone.",
+    "success": {
+      "created": "Brand profile created successfully.",
+      "updated": "Brand profile updated successfully.",
+      "deleted": "Brand profile deleted successfully."
+    },
+    "errors": {
+      "loadFailed": "Failed to load brand profiles. Please try again.",
+      "saveFailed": "Failed to save brand profile.",
+      "deleteFailed": "Failed to delete brand profile."
+    }
+  },
+  "matching": {
+    "title": "AI Matching Panel",
+    "subtitle": "Hybrid analysis: server Ollama ({serverModel}) with WebLLM fallback ({browserModel})",
+    "loading": "Loading...",
+    "errors": {
+      "loadFailed": "Failed to load data. Please try again.",
+      "questionTooLong": "Question must be at most {max} characters."
+    },
+    "emptyScores": {
+      "title": "No scores added yet",
+      "description": "Add influencer scores first before running matching analysis."
+    },
+    "selectInfluencer": "Select Influencer",
+    "collaborations": "Collaborations: {notes}",
+    "brandProfile": {
+      "label": "Brand Profile",
+      "optional": "(optional)",
+      "none": "None",
+      "emptyHint": "No brand profiles yet — create one under Brand Profiles"
+    },
+    "question": {
+      "label": "Your question",
+      "optional": "(optional)",
+      "placeholder": "e.g. Is this influencer a good fit for a young tech brand?",
+      "charCount": "{current}/{max} — leave empty for default analysis"
+    },
+    "analyze": {
+      "button": "Analyze",
+      "server": "Analyzing on server...",
+      "browserLoading": "Loading browser model...",
+      "browser": "Analyzing in browser...",
+      "preparingBrowser": "Preparing browser model..."
+    },
+    "scores": {
+      "overall": "Overall",
+      "overallAi": "Overall (AI)",
+      "engagement": "Engagement",
+      "audience": "Audience",
+      "brandFit": "Brand Fit",
+      "overallDesc": "Overall fit score",
+      "engagementDesc": "Follower engagement rate",
+      "audienceDesc": "Audience-brand alignment",
+      "brandFitDesc": "Brand values match"
+    },
+    "notice": {
+      "webllmFallback": "Server Ollama timed out or is unavailable. Continuing with browser WebLLM…"
+    },
+    "analyzedFor": "Analyzed for: {brandName}",
+    "questionHeading": "Question",
+    "summary": {
+      "title": "AI Summary",
+      "newBrowser": "· new (browser)",
+      "newServer": "· new (server)"
+    },
+    "insights": {
+      "title": "Insights"
+    },
+    "history": {
+      "title": "Analysis History",
+      "earlierOne": "{count} earlier analysis",
+      "earlierOther": "{count} earlier analyses"
+    },
+    "noAnalysis": {
+      "title": "No analysis yet",
+      "description": "Click \"Analyze\" for the selected influencer."
+    }
+  },
+  "monitoring": {
+    "loading": "Loading...",
+    "errors": {
+      "loadFailed": "Failed to load monitoring data.",
+      "fetchFailed": "Failed to fetch data"
+    },
+    "title": "LLM Monitoring",
+    "subtitle": "Web-LLM call metrics and performance summary",
+    "lastUpdated": "Last updated: {time}",
+    "pollInterval": "10s",
+    "stats": {
+      "totalCalls": "Total Calls",
+      "avgResponseTime": "Average Response Time",
+      "errorRate": "Error Rate"
+    },
+    "recentCalls": {
+      "title": "Recent Calls",
+      "subtitle": "Latest {count} LLM calls",
+      "empty": "No LLM calls recorded yet"
+    },
+    "table": {
+      "influencer": "Influencer",
+      "model": "Model",
+      "duration": "Duration",
+      "status": "Status",
+      "time": "Time"
+    },
+    "status": {
+      "success": "success",
+      "error": "error"
+    }
+  },
+  "admin": {
+    "loading": "Loading...",
+    "errors": {
+      "loadFailed": "Failed to load admin panel.",
+      "saveFailed": "Failed to save configuration."
+    },
+    "success": {
+      "configSaved": "LLM configuration saved."
+    },
+    "title": "Admin — LLM Configuration",
+    "subtitle": "Manage system prompt, model parameters, and review recent Ollama calls",
+    "form": {
+      "systemPrompt": "System Prompt",
+      "temperature": "Temperature (0–1)",
+      "maxTokens": "Max Tokens",
+      "model": "Model",
+      "save": "Save Configuration",
+      "saving": "Saving..."
+    },
+    "logs": {
+      "title": "Recent LLM Requests (last 50)",
+      "subtitle": "Server-side Ollama calls logged from analyze flows",
+      "empty": "No LLM requests logged yet"
+    },
+    "table": {
+      "time": "Time",
+      "model": "Model",
+      "duration": "Duration",
+      "status": "Status"
+    },
+    "status": {
+      "success": "success",
+      "error": "error"
+    }
+  },
+  "validation": {},
+  "errors": {}
+}

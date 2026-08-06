@@ -4,6 +4,7 @@ export interface MCPPayload {
   request_type: string;
   context: Record<string, unknown>;
   query: string;
+  brand_profile_id?: string;
 }
 
 export interface RichResult {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   handleUnauthorizedRedirect,
   isUnauthorized,
@@ -12,6 +13,7 @@ import { platformColors, scoreColor } from "@/lib/score-utils";
 import AddInfluencerModal from "./AddInfluencerModal";
 
 export default function InfluencersPage() {
+  const t = useTranslations("influencers");
   const [scores, setScores] = useState<InfluencerScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export default function InfluencersPage() {
           handleUnauthorizedRedirect("/influencers");
           return;
         }
-        setError("Failed to load scores. Please try again.");
+        setError(t("errors.loadFailed"));
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -60,20 +62,20 @@ export default function InfluencersPage() {
   async function handleAddSuccess() {
     try {
       await loadScores();
-      setSuccessMessage("Influencer added successfully.");
+      setSuccessMessage(t("success.added"));
     } catch (err) {
       if (isUnauthorized(err)) {
         handleUnauthorizedRedirect("/influencers");
         return;
       }
-      setError("Failed to refresh the list. Please reload the page.");
+      setError(t("errors.refreshFailed"));
     }
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-[var(--muted)]">
-        Loading...
+        {t("loading")}
       </div>
     );
   }
@@ -91,9 +93,9 @@ export default function InfluencersPage() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Influencer Pool</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
             <p className="mt-1 text-[var(--muted)]">
-              Web-LLM score results
+              {t("subtitle")}
               {scores.length > 0 && (
                 <span className="ml-2 text-[var(--accent)]">({scores.length})</span>
               )}
@@ -105,7 +107,7 @@ export default function InfluencersPage() {
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-90"
           >
             <span aria-hidden="true">+</span>
-            Add Influencer
+            {t("addInfluencer")}
           </button>
         </div>
 
@@ -120,16 +122,14 @@ export default function InfluencersPage() {
 
         {scores.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-16 text-center">
-            <p className="text-lg font-medium">No scores added yet</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              Scores will appear here when Web-LLM analysis results are saved or when you add influencers manually.
-            </p>
+            <p className="text-lg font-medium">{t("empty.title")}</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{t("empty.description")}</p>
             <button
               type="button"
               onClick={() => setModalOpen(true)}
               className="mt-6 inline-flex items-center gap-2 rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-muted)] px-4 py-2 text-sm font-medium text-[var(--accent)] transition-colors hover:border-[var(--accent)]/60"
             >
-              + Add your first influencer
+              {t("addFirstInfluencer")}
             </button>
           </div>
         ) : (
@@ -138,13 +138,13 @@ export default function InfluencersPage() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-[var(--border)] text-[var(--muted)]">
-                    <th className="px-5 py-3 font-medium">Influencer</th>
-                    <th className="px-5 py-3 font-medium">Platform</th>
-                    <th className="px-5 py-3 font-medium">Overall</th>
-                    <th className="px-5 py-3 font-medium">Engagement</th>
-                    <th className="px-5 py-3 font-medium">Audience</th>
-                    <th className="px-5 py-3 font-medium">Brand Fit</th>
-                    <th className="px-5 py-3 font-medium">Profile</th>
+                    <th className="px-5 py-3 font-medium">{t("table.influencer")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.platform")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.overall")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.engagement")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.audience")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.brandFit")}</th>
+                    <th className="px-5 py-3 font-medium">{t("table.profile")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -196,14 +196,14 @@ export default function InfluencersPage() {
                     </span>
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                    <MiniStat label="Engagement" value={s.engagement_score} />
-                    <MiniStat label="Audience" value={s.audience_score} />
-                    <MiniStat label="Brand" value={s.brand_fit_score} />
+                    <MiniStat label={t("mobile.engagement")} value={s.engagement_score} />
+                    <MiniStat label={t("mobile.audience")} value={s.audience_score} />
+                    <MiniStat label={t("mobile.brand")} value={s.brand_fit_score} />
                   </div>
                   <p className="mt-3 text-xs text-[var(--muted)]">{profileSummary(s)}</p>
                   {s.notes && (
                     <p className="mt-1 text-xs text-[var(--muted)]">
-                      Collaborations: {s.notes}
+                      {t("mobile.collaborations", { notes: s.notes })}
                     </p>
                   )}
                 </article>

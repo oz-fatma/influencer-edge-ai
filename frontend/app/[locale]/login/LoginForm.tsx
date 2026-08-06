@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import LanguageToggle from "@/components/LanguageToggle";
 import { clearAuth, getToken, setAuth, syncAuthCookie } from "@/lib/auth";
 import { ApiError, authApi, toAuthUser } from "@/lib/api";
 
@@ -15,6 +17,7 @@ function safeRedirect(path: string | null): string {
 }
 
 export default function LoginForm() {
+  const t = useTranslations("auth");
   const searchParams = useSearchParams();
   const redirect = safeRedirect(searchParams.get("redirect"));
 
@@ -36,7 +39,7 @@ export default function LoginForm() {
 
     if (!syncAuthCookie()) {
       clearAuth();
-      setError("Session cookie could not be set. Please sign in again.");
+      setError(t("errors.sessionCookieRestore"));
       return;
     }
 
@@ -44,11 +47,15 @@ export default function LoginForm() {
   }, [redirect]);
 
   function validate(): string | null {
-    if (!email.trim()) return "Email is required";
-    if (!password) return "Password is required";
-    if (mode === "register" && !firstName.trim()) return "First name is required";
-    if (mode === "register" && !lastName.trim()) return "Last name is required";
-    if (password.length < 8) return "Password must be at least 8 characters";
+    if (!email.trim()) return t("validation.emailRequired");
+    if (!password) return t("validation.passwordRequired");
+    if (mode === "register" && !firstName.trim()) {
+      return t("validation.firstNameRequired");
+    }
+    if (mode === "register" && !lastName.trim()) {
+      return t("validation.lastNameRequired");
+    }
+    if (password.length < 8) return t("validation.passwordMinLength");
     return null;
   }
 
@@ -81,7 +88,7 @@ export default function LoginForm() {
       const response = await authApi.login(payload);
       setAuth(response.token, toAuthUser(response.user), response.is_admin === true);
       if (!syncAuthCookie()) {
-        setError("Signed in, but the session cookie could not be set. Try again or clear site data.");
+        setError(t("errors.sessionCookieAfterLogin"));
         clearAuth();
         return;
       }
@@ -90,7 +97,7 @@ export default function LoginForm() {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError("Connection error — is the backend running?");
+        setError(t("errors.connectionError"));
       }
     } finally {
       setLoading(false);
@@ -98,16 +105,17 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center bg-grid px-6 py-12">
+    <div className="relative flex min-h-full flex-col items-center justify-center bg-grid px-6 py-12">
+      <div className="fixed right-6 top-6 z-50">
+        <LanguageToggle />
+      </div>
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent)] text-lg font-bold text-[var(--accent-fg)]">
             IE
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">InfluencerEdge AI</h1>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Sign in to the influencer–agency matching platform
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="mt-2 text-sm text-[var(--muted)]">{t("subtitle")}</p>
         </div>
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-2xl shadow-black/20">
@@ -126,7 +134,7 @@ export default function LoginForm() {
                     : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
-                {m === "login" ? "Sign In" : "Register"}
+                {m === "login" ? t("tabs.signIn") : t("tabs.register")}
               </button>
             ))}
           </div>
@@ -136,7 +144,7 @@ export default function LoginForm() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="first_name" className="mb-1.5 block text-sm font-medium">
-                    First Name
+                    {t("fields.firstName")}
                   </label>
                   <input
                     id="first_name"
@@ -144,12 +152,12 @@ export default function LoginForm() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30"
-                    placeholder="Jane"
+                    placeholder={t("placeholders.firstName")}
                   />
                 </div>
                 <div>
                   <label htmlFor="last_name" className="mb-1.5 block text-sm font-medium">
-                    Last Name
+                    {t("fields.lastName")}
                   </label>
                   <input
                     id="last_name"
@@ -157,7 +165,7 @@ export default function LoginForm() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30"
-                    placeholder="Doe"
+                    placeholder={t("placeholders.lastName")}
                   />
                 </div>
               </div>
@@ -165,7 +173,7 @@ export default function LoginForm() {
 
             <div>
               <label htmlFor="email" className="mb-1.5 block text-sm font-medium">
-                Email
+                {t("fields.email")}
               </label>
               <input
                 id="email"
@@ -173,14 +181,14 @@ export default function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30"
-                placeholder="you@agency.com"
+                placeholder={t("placeholders.email")}
                 autoComplete="email"
               />
             </div>
 
             <div>
               <label htmlFor="password" className="mb-1.5 block text-sm font-medium">
-                Password
+                {t("fields.password")}
               </label>
               <input
                 id="password"
@@ -188,7 +196,7 @@ export default function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-elevated)] px-4 py-2.5 text-sm outline-none transition-colors focus:border-[var(--accent)]/60 focus:ring-1 focus:ring-[var(--accent)]/30"
-                placeholder="••••••••"
+                placeholder={t("placeholders.password")}
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
               />
             </div>
@@ -205,10 +213,10 @@ export default function LoginForm() {
               className="w-full rounded-lg bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {loading
-                ? "Processing..."
+                ? t("submit.processing")
                 : mode === "login"
-                  ? "Sign In"
-                  : "Create Account"}
+                  ? t("submit.signIn")
+                  : t("submit.createAccount")}
             </button>
           </form>
         </div>

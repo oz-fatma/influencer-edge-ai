@@ -1,0 +1,404 @@
+{
+  "metadata": {
+    "title": "InfluencerEdge AI",
+    "description": "Influencer–ajans eşleştirme platformu"
+  },
+  "common": {
+    "loading": "Yükleniyor...",
+    "cancel": "İptal",
+    "save": "Kaydet",
+    "saving": "Kaydediliyor...",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "close": "Kapat",
+    "optional": "(opsiyonel)",
+    "required": "*",
+    "processing": "İşleniyor..."
+  },
+  "nav": {
+    "appName": "InfluencerEdge",
+    "dashboard": "Gösterge Paneli",
+    "influencerPool": "Influencer Havuzu",
+    "brandProfiles": "Marka Profilleri",
+    "matchingPanel": "Eşleştirme Paneli",
+    "monitoring": "İzleme",
+    "admin": "Yönetim",
+    "logout": "Çıkış",
+    "loggingOut": "Çıkış yapılıyor..."
+  },
+  "auth": {
+    "loading": "Yükleniyor...",
+    "title": "InfluencerEdge AI",
+    "subtitle": "Influencer–ajans eşleştirme platformuna giriş yapın",
+    "tabs": {
+      "signIn": "Giriş Yap",
+      "register": "Kayıt Ol"
+    },
+    "fields": {
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "email": "E-posta",
+      "password": "Şifre"
+    },
+    "placeholders": {
+      "firstName": "Ayşe",
+      "lastName": "Yılmaz",
+      "email": "siz@ajans.com",
+      "password": "••••••••"
+    },
+    "submit": {
+      "signIn": "Giriş Yap",
+      "createAccount": "Hesap Oluştur",
+      "processing": "İşleniyor..."
+    },
+    "validation": {
+      "emailRequired": "E-posta gerekli",
+      "passwordRequired": "Şifre gerekli",
+      "firstNameRequired": "Ad gerekli",
+      "lastNameRequired": "Soyad gerekli",
+      "passwordMinLength": "Şifre en az 8 karakter olmalı"
+    },
+    "errors": {
+      "sessionCookieRestore": "Oturum çerezi ayarlanamadı. Lütfen tekrar giriş yapın.",
+      "sessionCookieAfterLogin": "Giriş yapıldı ancak oturum çerezi ayarlanamadı. Tekrar deneyin veya site verilerini temizleyin.",
+      "connectionError": "Bağlantı hatası — backend çalışıyor mu?"
+    }
+  },
+  "dashboard": {
+    "welcome": "Hoş geldiniz",
+    "welcomeWithName": "Hoş geldiniz, {name}",
+    "subtitle": "InfluencerEdge AI gösterge panelinize genel bakış",
+    "stats": {
+      "influencersInPool": "Havuzdaki Influencer'lar",
+      "averageScore": "Ortalama Skor",
+      "highFit": "Yüksek Uyum",
+      "scoreSuffix": "/100",
+      "candidatesSuffix": " aday",
+      "emptyValue": "—"
+    },
+    "quickAccess": {
+      "title": "Hızlı Erişim",
+      "influencerPoolTitle": "Influencer Havuzu",
+      "influencerPoolDesc": "Skorlanmış influencer listesine göz atın",
+      "aiMatchingTitle": "AI Eşleştirme",
+      "aiMatchingDesc": "Web-LLM analiz sonuçlarını görüntüleyin"
+    },
+    "recentScores": {
+      "title": "Son Skorlar",
+      "loading": "Yükleniyor...",
+      "empty": "Henüz skor eklenmedi"
+    }
+  },
+  "influencers": {
+    "title": "Influencer Havuzu",
+    "subtitle": "Web-LLM skor sonuçları",
+    "addInfluencer": "Influencer Ekle",
+    "addFirstInfluencer": "+ İlk influencer'ınızı ekleyin",
+    "loading": "Yükleniyor...",
+    "errors": {
+      "loadFailed": "Skorlar yüklenemedi. Lütfen tekrar deneyin.",
+      "refreshFailed": "Liste yenilenemedi. Lütfen sayfayı yenileyin."
+    },
+    "success": {
+      "added": "Influencer başarıyla eklendi."
+    },
+    "empty": {
+      "title": "Henüz skor eklenmedi",
+      "description": "Web-LLM analiz sonuçları kaydedildiğinde veya influencer'ları manuel eklediğinizde skorlar burada görünür."
+    },
+    "table": {
+      "influencer": "Influencer",
+      "platform": "Platform",
+      "overall": "Genel",
+      "engagement": "Etkileşim",
+      "audience": "Kitle",
+      "brandFit": "Marka Uyumu",
+      "profile": "Profil"
+    },
+    "mobile": {
+      "engagement": "Etkileşim",
+      "audience": "Kitle",
+      "brand": "Marka",
+      "collaborations": "İşbirlikleri: {notes}"
+    }
+  },
+  "influencersModal": {
+    "title": "Yeni Influencer Ekle",
+    "subtitle": "Havuza yapılandırılmış profil bilgisi ekleyin. Skor üretmek için Eşleştirme panelinde Analiz çalıştırın.",
+    "close": "Kapat",
+    "fields": {
+      "influencerName": "Influencer Adı",
+      "platform": "Platform",
+      "niche": "Niş",
+      "audienceRegion": "Kitle — bölge",
+      "audienceDemographics": "Kitle — demografi",
+      "followers": "Takipçi",
+      "engagementRate": "Etkileşim (%)",
+      "contentFormat": "İçerik formatı",
+      "pastCollaborationsOptional": "Geçmiş işbirlikleri (opsiyonel)"
+    },
+    "placeholders": {
+      "influencerName": "örn. Ayşe Yılmaz",
+      "engagementRate": "4,2",
+      "pastCollaborations": "yerel kozmetik markaları"
+    },
+    "validation": {
+      "nameRequired": "Influencer adı gerekli",
+      "nicheRequired": "Niş gerekli",
+      "audienceRegionRequired": "Kitle bölgesi gerekli",
+      "audienceDemoRequired": "Kitle demografisi gerekli",
+      "followerRangeRequired": "Takipçi aralığı gerekli",
+      "engagementRateRequired": "Etkileşim oranı gerekli",
+      "engagementRateRange": "Etkileşim oranı 0 ile 100 arasında olmalı",
+      "contentFormatRequired": "En az bir içerik formatı seçin"
+    },
+    "errors": {
+      "addFailed": "Influencer eklenemedi. Lütfen tekrar deneyin."
+    },
+    "submit": {
+      "cancel": "İptal",
+      "add": "Ekle",
+      "saving": "Kaydediliyor..."
+    },
+    "options": {
+      "niches": {
+        "beautyAndSkincare": "Güzellik ve cilt bakımı",
+        "fashion": "Moda",
+        "fitnessAndHealth": "Fitness ve sağlık",
+        "foodAndRecipes": "Yemek ve tarifler",
+        "travel": "Seyahat",
+        "tech": "Teknoloji",
+        "homeDecor": "Ev dekorasyonu",
+        "parenting": "Ebeveynlik",
+        "comedy": "Komedi",
+        "gaming": "Oyun"
+      },
+      "audienceGeo": {
+        "turkey": "Türkiye",
+        "usa": "ABD",
+        "europe": "Avrupa",
+        "global": "Global"
+      },
+      "audienceDemo": {
+        "women1824": "Kadın 18-24",
+        "women2534": "Kadın 25-34",
+        "men1824": "Erkek 18-24",
+        "men2534": "Erkek 25-34",
+        "mixed1834": "Karma 18-34",
+        "mixed35plus": "Karma 35+"
+      },
+      "followerRanges": {
+        "10k50k": "10K-50K",
+        "50k100k": "50K-100K",
+        "100k500k": "100K-500K",
+        "500k1m": "500K-1M",
+        "1mPlus": "1M+"
+      },
+      "contentFormats": {
+        "reels": "Reels",
+        "story": "Story",
+        "post": "Post",
+        "video": "Video"
+      },
+      "platforms": {
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "youtube": "YouTube",
+        "twitter": "Twitter",
+        "linkedin": "LinkedIn",
+        "other": "Diğer"
+      }
+    }
+  },
+  "brandProfiles": {
+    "title": "Marka Profilleri",
+    "subtitle": "Influencer uyum analizi için marka bağlamınızı kaydedin",
+    "newProfile": "Yeni Marka Profili",
+    "createFirstProfile": "+ İlk marka profilinizi oluşturun",
+    "loading": "Yükleniyor...",
+    "form": {
+      "editTitle": "Marka Profilini Düzenle",
+      "createTitle": "Yeni Marka Profili",
+      "cancel": "İptal",
+      "saveChanges": "Değişiklikleri Kaydet",
+      "createProfile": "Profil Oluştur",
+      "saving": "Kaydediliyor..."
+    },
+    "fields": {
+      "name": "Ad",
+      "industry": "Sektör / Niş",
+      "targetAudience": "Hedef Kitle",
+      "budgetRangeOptional": "Bütçe Aralığı (opsiyonel)",
+      "campaignGoal": "Kampanya Hedefi",
+      "brandValues": "Marka Değerleri"
+    },
+    "placeholders": {
+      "name": "Runfit",
+      "industry": "Fitness ve aktif yaşam",
+      "targetAudience": "18-30, kadın ve erkek, büyük şehirler",
+      "budgetRange": "5.000-15.000 TL",
+      "campaignGoal": "Marka bilinirliği",
+      "brandValues": "Enerjik, motive edici, samimi (elitist değil)"
+    },
+    "empty": {
+      "title": "Henüz marka profili yok",
+      "description": "Influencer eşleştirmesi için markanızı tanımlayan bir profil oluşturun."
+    },
+    "card": {
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "deleting": "Siliniyor...",
+      "targetAudience": "Hedef kitle",
+      "budget": "Bütçe",
+      "campaignGoal": "Kampanya hedefi",
+      "brandValues": "Marka değerleri"
+    },
+    "confirmDelete": "\"{name}\" marka profilini silmek istiyor musunuz? Bu işlem geri alınamaz.",
+    "success": {
+      "created": "Marka profili başarıyla oluşturuldu.",
+      "updated": "Marka profili başarıyla güncellendi.",
+      "deleted": "Marka profili başarıyla silindi."
+    },
+    "errors": {
+      "loadFailed": "Marka profilleri yüklenemedi. Lütfen tekrar deneyin.",
+      "saveFailed": "Marka profili kaydedilemedi.",
+      "deleteFailed": "Marka profili silinemedi."
+    }
+  },
+  "matching": {
+    "title": "AI Eşleştirme Paneli",
+    "subtitle": "Hibrit analiz: sunucu Ollama ({serverModel}) ve WebLLM yedek ({browserModel})",
+    "loading": "Yükleniyor...",
+    "errors": {
+      "loadFailed": "Veriler yüklenemedi. Lütfen tekrar deneyin.",
+      "questionTooLong": "Soru en fazla {max} karakter olabilir."
+    },
+    "emptyScores": {
+      "title": "Henüz skor eklenmedi",
+      "description": "Eşleştirme analizi çalıştırmadan önce influencer skorları ekleyin."
+    },
+    "selectInfluencer": "Influencer Seçin",
+    "collaborations": "İşbirlikleri: {notes}",
+    "brandProfile": {
+      "label": "Marka Profili",
+      "optional": "(opsiyonel)",
+      "none": "Yok",
+      "emptyHint": "Henüz marka profili yok — Marka Profilleri bölümünden oluşturun"
+    },
+    "question": {
+      "label": "Sorunuz",
+      "optional": "(opsiyonel)",
+      "placeholder": "örn. Bu influencer genç bir teknoloji markası için uygun mu?",
+      "charCount": "{current}/{max} — varsayılan analiz için boş bırakın"
+    },
+    "analyze": {
+      "button": "Analiz Et",
+      "server": "Sunucuda analiz ediliyor...",
+      "browserLoading": "Tarayıcı modeli yükleniyor...",
+      "browser": "Tarayıcıda analiz ediliyor...",
+      "preparingBrowser": "Tarayıcı modeli hazırlanıyor..."
+    },
+    "scores": {
+      "overall": "Genel",
+      "overallAi": "Genel (AI)",
+      "engagement": "Etkileşim",
+      "audience": "Kitle",
+      "brandFit": "Marka Uyumu",
+      "overallDesc": "Genel uyum skoru",
+      "engagementDesc": "Takipçi etkileşim oranı",
+      "audienceDesc": "Kitle-marka uyumu",
+      "brandFitDesc": "Marka değerleri eşleşmesi"
+    },
+    "notice": {
+      "webllmFallback": "Sunucu Ollama zaman aşımına uğradı veya kullanılamıyor. Tarayıcı WebLLM ile devam ediliyor…"
+    },
+    "analyzedFor": "Analiz edilen marka: {brandName}",
+    "questionHeading": "Soru",
+    "summary": {
+      "title": "AI Özeti",
+      "newBrowser": "· yeni (tarayıcı)",
+      "newServer": "· yeni (sunucu)"
+    },
+    "insights": {
+      "title": "İçgörüler"
+    },
+    "history": {
+      "title": "Analiz Geçmişi",
+      "earlierOne": "{count} önceki analiz",
+      "earlierOther": "{count} önceki analiz"
+    },
+    "noAnalysis": {
+      "title": "Henüz analiz yok",
+      "description": "Seçili influencer için \"Analiz Et\" butonuna tıklayın."
+    }
+  },
+  "monitoring": {
+    "loading": "Yükleniyor...",
+    "errors": {
+      "loadFailed": "İzleme verileri yüklenemedi.",
+      "fetchFailed": "Veri alınamadı"
+    },
+    "title": "LLM İzleme",
+    "subtitle": "Web-LLM çağrı metrikleri ve performans özeti",
+    "lastUpdated": "Son güncelleme: {time}",
+    "pollInterval": "10 sn",
+    "stats": {
+      "totalCalls": "Toplam Çağrı",
+      "avgResponseTime": "Ortalama Yanıt Süresi",
+      "errorRate": "Hata Oranı"
+    },
+    "recentCalls": {
+      "title": "Son Çağrılar",
+      "subtitle": "Son {count} LLM çağrısı",
+      "empty": "Henüz LLM çağrısı kaydedilmedi"
+    },
+    "table": {
+      "influencer": "Influencer",
+      "model": "Model",
+      "duration": "Süre",
+      "status": "Durum",
+      "time": "Zaman"
+    },
+    "status": {
+      "success": "başarılı",
+      "error": "hata"
+    }
+  },
+  "admin": {
+    "loading": "Yükleniyor...",
+    "errors": {
+      "loadFailed": "Yönetici paneli yüklenemedi.",
+      "saveFailed": "Yapılandırma kaydedilemedi."
+    },
+    "success": {
+      "configSaved": "LLM yapılandırması kaydedildi."
+    },
+    "title": "Yönetici — LLM Yapılandırması",
+    "subtitle": "Sistem prompt'u, model parametreleri ve son Ollama çağrılarını yönetin",
+    "form": {
+      "systemPrompt": "Sistem Prompt'u",
+      "temperature": "Temperature (0–1)",
+      "maxTokens": "Maks. Token",
+      "model": "Model",
+      "save": "Yapılandırmayı Kaydet",
+      "saving": "Kaydediliyor..."
+    },
+    "logs": {
+      "title": "Son LLM İstekleri (son 50)",
+      "subtitle": "Analiz akışlarından kaydedilen sunucu tarafı Ollama çağrıları",
+      "empty": "Henüz LLM isteği kaydedilmedi"
+    },
+    "table": {
+      "time": "Zaman",
+      "model": "Model",
+      "duration": "Süre",
+      "status": "Durum"
+    },
+    "status": {
+      "success": "başarılı",
+      "error": "hata"
+    }
+  },
+  "validation": {},
+  "errors": {}
+}

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   adminApi,
   authApi,
@@ -15,6 +16,10 @@ import { formatLatency } from "@/lib/format";
 
 export default function AdminPage() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("admin");
+  const intlLocale = locale === "tr" ? "tr-TR" : "en-US";
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +73,7 @@ export default function AdminPage() {
           handleUnauthorizedRedirect("/admin");
           return;
         }
-        setError("Failed to load admin panel.");
+        setError(t("errors.loadFailed"));
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -80,7 +85,7 @@ export default function AdminPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -96,13 +101,13 @@ export default function AdminPage() {
         model,
       });
       applyConfig(updated);
-      setSuccess("LLM configuration saved.");
+      setSuccess(t("success.configSaved"));
     } catch (err) {
       if (isUnauthorized(err)) {
         handleUnauthorizedRedirect("/admin");
         return;
       }
-      setError(err instanceof Error ? err.message : "Failed to save configuration.");
+      setError(err instanceof Error ? err.message : t("errors.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -111,7 +116,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24 text-[var(--muted)]">
-        Loading...
+        {t("loading")}
       </div>
     );
   }
@@ -119,10 +124,8 @@ export default function AdminPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Admin — LLM Configuration</h1>
-        <p className="mt-1 text-[var(--muted)]">
-          Manage system prompt, model parameters, and review recent Ollama calls
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-[var(--muted)]">{t("subtitle")}</p>
       </div>
 
       {error && (
@@ -142,7 +145,7 @@ export default function AdminPage() {
       >
         <div>
           <label htmlFor="system_prompt" className="mb-1.5 block text-sm font-medium">
-            System Prompt
+            {t("form.systemPrompt")}
           </label>
           <textarea
             id="system_prompt"
@@ -157,7 +160,7 @@ export default function AdminPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <label htmlFor="temperature" className="mb-1.5 block text-sm font-medium">
-              Temperature (0–1)
+              {t("form.temperature")}
             </label>
             <input
               id="temperature"
@@ -173,7 +176,7 @@ export default function AdminPage() {
           </div>
           <div>
             <label htmlFor="max_tokens" className="mb-1.5 block text-sm font-medium">
-              Max Tokens
+              {t("form.maxTokens")}
             </label>
             <input
               id="max_tokens"
@@ -188,7 +191,7 @@ export default function AdminPage() {
           </div>
           <div>
             <label htmlFor="model" className="mb-1.5 block text-sm font-medium">
-              Model
+              {t("form.model")}
             </label>
             <select
               id="model"
@@ -210,38 +213,36 @@ export default function AdminPage() {
           disabled={saving}
           className="rounded-lg bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--accent-fg)] hover:opacity-90 disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Save Configuration"}
+          {saving ? t("form.saving") : t("form.save")}
         </button>
       </form>
 
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <h2 className="text-lg font-semibold">Recent LLM Requests (last 50)</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Server-side Ollama calls logged from analyze flows
-        </p>
+        <h2 className="text-lg font-semibold">{t("logs.title")}</h2>
+        <p className="mt-1 text-sm text-[var(--muted)]">{t("logs.subtitle")}</p>
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] text-[var(--muted)]">
-                <th className="px-3 py-2 font-medium">Time</th>
-                <th className="px-3 py-2 font-medium">Model</th>
-                <th className="px-3 py-2 font-medium">Duration</th>
-                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">{t("table.time")}</th>
+                <th className="px-3 py-2 font-medium">{t("table.model")}</th>
+                <th className="px-3 py-2 font-medium">{t("table.duration")}</th>
+                <th className="px-3 py-2 font-medium">{t("table.status")}</th>
               </tr>
             </thead>
             <tbody>
               {logs.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-3 py-6 text-center text-[var(--muted)]">
-                    No LLM requests logged yet
+                    {t("logs.empty")}
                   </td>
                 </tr>
               ) : (
                 logs.map((log, index) => (
                   <tr key={`${log.created_at}-${index}`} className="border-b border-[var(--border)]/60">
                     <td className="px-3 py-2">
-                      {new Date(log.created_at).toLocaleString()}
+                      {new Date(log.created_at).toLocaleString(intlLocale)}
                     </td>
                     <td className="px-3 py-2 font-mono text-xs">{log.model_name}</td>
                     <td className="px-3 py-2">{formatLatency(log.duration_ms)}</td>
@@ -253,7 +254,7 @@ export default function AdminPage() {
                             : "bg-red-500/15 text-red-400"
                         }`}
                       >
-                        {log.success ? "success" : "error"}
+                        {log.success ? t("status.success") : t("status.error")}
                       </span>
                     </td>
                   </tr>
